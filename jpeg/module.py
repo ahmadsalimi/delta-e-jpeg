@@ -5,7 +5,7 @@ from pytorch_lightning import LightningModule
 from torch import nn
 
 from jpeg.jpeg import ExtendedJPEG
-from metric.delta_e import DeltaE
+from metric.delta_e import DeltaE2000
 
 
 class ExtendedJPEGModule(LightningModule):
@@ -16,7 +16,7 @@ class ExtendedJPEGModule(LightningModule):
                  weight_decay: float = 1e-6):
         super().__init__()
         self.jpeg = ExtendedJPEG(downsample=downsample, upsample=upsample)
-        self.loss = loss or DeltaE()
+        self.loss = loss or DeltaE2000()
         self.hparams.update(lr=lr,
                             weight_decay=weight_decay)
 
