@@ -11,7 +11,7 @@ class NaiveDownsample(nn.Module):
     Args:
         factor (Tuple[int, int]): The downsampling factor along the height and width dimension.
             For instance, for 4:2:0 downsampling, use ``factor=(2, 2)``, for 4:2:2 downsampling,
-            use ``factor=(1, 2)``.
+            use ``factor=(1, 2)``. Defaults to (2, 2).
     """
 
     def __init__(self, factor: Tuple[int, int] = (2, 2)):
@@ -23,6 +23,7 @@ class NaiveDownsample(nn.Module):
 
         Args:
             ycbcr (torch.Tensor): A batch of images to downsample with shape :math:`(B, 3, H, W)`.
+                The images are assumed to be in YCbCr format.
 
         Returns:
             Tuple[torch.Tensor, torch.Tensor]: The luminance and downsampled chrominance channels.

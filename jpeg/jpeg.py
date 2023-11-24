@@ -63,7 +63,7 @@ class ExtendedJPEG(nn.Module):
         B, C, Hb, Wb, N, _ = x.shape
         x = x.permute(0, 1, 2, 4, 3, 5)       # B x C x H/8 x 8 x W/8 x 8
         x = x.reshape(B, C, Hb * N, Wb * N)         # B x C x H x W
-        x = x[..., :shape[0], :shape[1]]           # B x C x H x W
+        x = x[..., :shape[0], :shape[1]]            # B x C x H x W
         return x
 
     def forward(self, rgb: torch.Tensor) -> torch.Tensor:
@@ -129,7 +129,7 @@ class ExtendedJPEG(nn.Module):
 
         # merge blocks
         y = self.__merge_blocks(y, shape)           # B x 1 x H x W
-        cbcr = self.__merge_blocks(cbcr, shape)     # B x 2 x H/2 x W/2
+        cbcr = self.__merge_blocks(cbcr, (shape[0] // 2, shape[1] // 2))  # B x 2 x H/2 x W/2
 
         # upsample cb and cr
         ycbcr = self.upsample(y, cbcr)              # B x 3 x H x W
