@@ -19,4 +19,4 @@ class DeltaE(nn.Module):
         """
         x = K.color.rgb_to_lab(x)
         y = K.color.rgb_to_lab(y)
-        return ((x - y) * 2).reshape(x.shape[0], -1).mean(dim=1).sqrt().mean()
+        return (x - y).norm(dim=1).mean()
