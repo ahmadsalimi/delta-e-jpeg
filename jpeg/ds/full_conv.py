@@ -20,13 +20,33 @@ class FullConvDownsample(nn.Module):
 
     def __init__(self, channels: int, kernel_size: int = 2, factor: Tuple[int, int] = (2, 2)):
         super().__init__()
+        self.channels = channels
+        self.kernel_size = kernel_size
         self.conv = nn.Sequential(                                                  # B x 3 x H x W
-            nn.Conv2d(3, channels, kernel_size,
-                      stride=factor, padding=(kernel_size - factor[0] + 1) // 2),   # B x C x H/f x W/f
+            nn.Conv2d(3, channels, kernel_size,                           # B x C x H/f x W/f
+                      stride=factor, padding=((kernel_size - factor[0] + 1) // 2,
+                                              (kernel_size - factor[1] + 1) // 2)),
             nn.ReLU(inplace=True),
             nn.Conv2d(channels, 2, 1),                        # B x 2 x H/f x W/f
-            Clamp(0, 1),
+            Clamp(-0.5, 0.5),
         )
+        self._init_weights()
+
+    def _init_weights(self) -> None:
+        """Initialize the weights of the convolutional layers to averaging"""
+        self.conv[0].weight.data[:self.channels // 2, 0].normal_(0, 0.05)
+        self.conv[0].weight.data[:self.channels // 2, 1].normal_(1 / self.kernel_size ** 2, 0.05)
+        self.conv[0].weight.data[:self.channels // 2, 2].normal_(0, 0.05)
+        self.conv[0].weight.data[self.channels // 2:, 0].normal_(0, 0.05)
+        self.conv[0].weight.data[self.channels // 2:, 1].normal_(1 / self.kernel_size ** 2, 0.05)
+        self.conv[0].weight.data[self.channels // 2:, 2].normal_(0, 0.05)
+        self.conv[0].bias.data.fill_(0.5)
+
+        self.conv[2].weight.data[0, :self.channels // 2].normal_(1 / (self.channels // 2), 0.05)
+        self.conv[2].weight.data[1, :self.channels // 2].normal_(0, 0.05)
+        self.conv[2].weight.data[0, self.channels // 2:].normal_(0, 0.05)
+        self.conv[2].weight.data[1, self.channels // 2:].normal_(1 / (self.channels - self.channels // 2), 0.05)
+        self.conv[2].bias.data.fill_(-0.5)
 
     def forward(self, ycbcr: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Downsample a batch of images.
@@ -66,15 +86,21 @@ class FullConvUpsample(nn.Module):
             warnings.warn("final_kernel_size is None, but reconstruct_y is True. "
                           "reconstruct_y will be ignored.")
         super().__init__()
+        self.channels = channels
+        self.kernel_size = kernel_size
+        self.final_kernel_size_ = final_kernel_size
+        self.reconstruct_y = reconstruct_y
         self.conv = nn.Sequential(                                                  # B x 2 x H/f x W/f
             nn.Conv2d(2, channels, 1),                         # B x C x H/f x W/f
             nn.ReLU(inplace=True),
             *([
                   nn.ConvTranspose2d(channels, 2, kernel_size,          # B x 2 x H x W
-                                     stride=factor, padding=(kernel_size - factor[0]) // 2),
+                                     stride=factor, padding=((kernel_size - factor[0]) // 2,
+                                                             (kernel_size - factor[1]) // 2)),
               ] if final_kernel_size is None else [
                 nn.ConvTranspose2d(channels, channels, kernel_size,                 # B x C x H x W
-                                   stride=factor, padding=(kernel_size - factor[0]) // 2),
+                                   stride=factor, padding=((kernel_size - factor[0]) // 2,
+                                                           (kernel_size - factor[1]) // 2)),
             ]),
         )
         self.final_conv = nn.Sequential(
@@ -83,9 +109,49 @@ class FullConvUpsample(nn.Module):
                 nn.Conv2d(channels + 1, 2 + reconstruct_y, final_kernel_size,       # B x {2,3} x H x W
                           padding=(final_kernel_size - 1) // 2),
             ]),
-            Clamp(0, 1),
+            Clamp(-0.5, 0.5),
         )
-        self.reconstruct_y = reconstruct_y
+        self._init_weights()
+
+    def _init_weights(self) -> None:
+        """Initialize the weights of the convolutional layers to averaging"""
+        self.conv[0].weight.data[:self.channels // 2, 0].normal_(1, 0.01)
+        self.conv[0].weight.data[:self.channels // 2, 1].normal_(0, 0.01)
+        self.conv[0].weight.data[self.channels // 2:, 0].normal_(0, 0.01)
+        self.conv[0].weight.data[self.channels // 2:, 1].normal_(1, 0.01)
+        self.conv[0].bias.data.fill_(0.5)
+
+        if self.final_kernel_size_ is None:
+            self.conv[2].weight.data[:self.channels // 2, 0].normal_(1 / (self.channels // 2), 0.01)
+            self.conv[2].weight.data[:self.channels // 2, 1].normal_(0, 0.01)
+            self.conv[2].weight.data[self.channels // 2:, 0].normal_(0, 0.01)
+            self.conv[2].weight.data[self.channels // 2:, 1].normal_(1 / (self.channels - self.channels // 2), 0.01)
+            self.conv[2].bias.data.fill_(-0.5)
+        else:
+            for i in range(self.channels):
+                self.conv[2].weight.data[i, i].normal_(1, 0.01)
+                self.conv[2].weight.data[i, :i].normal_(0, 0.01)
+                self.conv[2].weight.data[i, i + 1:].normal_(0, 0.01)
+            self.conv[2].bias.data.zero_()
+
+            if self.reconstruct_y:
+                # convey y channel
+                self.final_conv[1].weight.data[0].normal_(0, 0.01)
+                self.final_conv[1].weight.data[0, 0, self.final_kernel_size_ // 2, self.final_kernel_size_ // 2]\
+                    .normal_(1, 0.01)
+                self.final_conv[1].bias.data[0].zero_()
+            self.final_conv[1].weight.data[0 + self.reconstruct_y, 1:(self.channels + 1) // 2].normal_(0, 0.01)
+            self.final_conv[1].weight.data[0 + self.reconstruct_y, 1:(self.channels + 1) // 2,
+                                           self.final_kernel_size_ // 2, self.final_kernel_size_ // 2]\
+                .normal_(1 / (self.channels // 2), 0.01)
+            self.final_conv[1].weight.data[1 + self.reconstruct_y, 1:(self.channels + 1) // 2].normal_(0, 0.01)
+
+            self.final_conv[1].weight.data[0 + self.reconstruct_y, (self.channels + 1) // 2:].normal_(0, 0.01)
+            self.final_conv[1].weight.data[1 + self.reconstruct_y, (self.channels + 1) // 2:].normal_(0, 0.01)
+            self.final_conv[1].weight.data[1 + self.reconstruct_y, (self.channels + 1) // 2:,
+                                           self.final_kernel_size_ // 2, self.final_kernel_size_ // 2]\
+                .normal_(1 / (self.channels - self.channels // 2), 0.01)
+            self.final_conv[1].bias.data[0 + self.reconstruct_y:].fill_(-0.5)
 
     def forward(self, y: torch.Tensor, cbcr: torch.Tensor) -> torch.Tensor:
         """Upsample a batch of images.

@@ -89,7 +89,7 @@ class ExtendedJPEG(nn.Module):
             Tuple[torch.Tensor, torch.Tensor]: The encoded luminance and chrominance blocks.
                 The luminance channel has shape :math:`(B, 1,
         """
-        ycbcr = K.color.rgb_to_ycbcr(rgb) - 0.5   # B x 3 x H x W
+        ycbcr = K.color.rgb_to_ycbcr(rgb) - 0.5     # B x 3 x H x W
 
         # downsample cb and cr
         y, cbcr = self.downsample(ycbcr)            # B x 1 x H x W, B x 2 x H/2 x W/2
