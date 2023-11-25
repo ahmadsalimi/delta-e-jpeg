@@ -8,21 +8,21 @@ import kornia as K
 class DeltaE76(nn.Module):
     """Compute the delta E 76 between two batches of images."""
 
-    def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, x_hat: torch.Tensor, *_, **__) -> torch.Tensor:
         """Compute the delta E 76 between two batches of images.
 
         Args:
             x (torch.Tensor): A batch of images in RGB format with shape :math:`(B, 3, H, W)`.
                 The images are assumed to be in the range :math:`[0, 1]`.
-            y (torch.Tensor): A batch of images in RGB format with shape :math:`(B, 3, H, W)`.
+            x_hat (torch.Tensor): A batch of images in RGB format with shape :math:`(B, 3, H, W)`.
                 The images are assumed to be in the range :math:`[0, 1]`.
 
         Returns:
             torch.Tensor: The delta E between the two batches of images with shape :math:`(B)`.
         """
         x = K.color.rgb_to_lab(x)
-        y = K.color.rgb_to_lab(y)
-        return (x - y).norm(dim=1).mean()
+        x_hat = K.color.rgb_to_lab(x_hat)
+        return (x - x_hat).norm(dim=1).mean()
 
 
 class DeltaE2000(nn.Module):
@@ -75,24 +75,24 @@ class DeltaE2000(nn.Module):
         return torch.where((h_x - h_y).abs() > 180, (h_x + h_y + 360) / 2,
                            (h_x + h_y) / 2)
 
-    def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, x_hat: torch.Tensor, *_, **__) -> torch.Tensor:
         """Compute the delta E 2000 between two batches of images.
 
         Args:
             x (torch.Tensor): A batch of images in RGB format with shape :math:`(B, 3, H, W)`.
                 The images are assumed to be in the range :math:`[0, 1]`.
-            y (torch.Tensor): A batch of images in RGB format with shape :math:`(B, 3, H, W)`.
+            x_hat (torch.Tensor): A batch of images in RGB format with shape :math:`(B, 3, H, W)`.
                 The images are assumed to be in the range :math:`[0, 1]`.
 
         Returns:
             torch.Tensor: The delta E between the two batches of images with shape :math:`(B)`.
         """
         l_x, a_x, b_x = self.__lab(x)                       # B x H x W
-        l_y, a_y, b_y = self.__lab(y)                       # B x H x W
+        l_y, a_y, b_y = self.__lab(x_hat)                   # B x H x W
         delta_l = l_y - l_x                                 # B x H x W
         l_bar = self.__bar(l_x, l_y)                    # B x H x W
         c_x = self.__c(x)                                   # B x H x W
-        c_y = self.__c(y)                                   # B x H x W
+        c_y = self.__c(x_hat)                               # B x H x W
         c_bar = self.__bar(c_x, c_y)                    # B x H x W
         a_x_prime = self.__a_prime(a_x, c_bar)              # B x H x W
         a_y_prime = self.__a_prime(a_y, c_bar)              # B x H x W

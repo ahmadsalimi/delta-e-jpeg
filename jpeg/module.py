@@ -8,13 +8,14 @@ from jpeg.jpeg import ExtendedJPEG
 from metric.delta_e import DeltaE2000
 from metric.mse import MSE
 from metric.psnr import PSNR
+from metric.sparsity import Sparsity
 
 
 class ExtendedJPEGModule(LightningModule):
     def __init__(self, downsample: Optional[nn.Module] = None,
                  upsample: Optional[nn.Module] = None,
                  metrics: Optional[Dict[str, nn.Module]] = None,
-                 main_loss: str = 'deltaE',
+                 loss_dict: Optional[Dict[str, float]] = None,
                  lr: float = 1e-3,
                  weight_decay: float = 1e-6):
         super().__init__()
@@ -23,8 +24,11 @@ class ExtendedJPEGModule(LightningModule):
             'deltaE': DeltaE2000(),
             'mse': MSE(),
             'psnr': PSNR(data_range=1),
+            'sparsity': Sparsity(),
         }
-        self.main_loss = main_loss
+        self.loss_dict = loss_dict or {
+            'deltaE': 1,
+        }
         self.hparams.update(lr=lr,
                             weight_decay=weight_decay)
 
@@ -33,29 +37,29 @@ class ExtendedJPEGModule(LightningModule):
         rgb_hat = self.jpeg.decode(y, cbcr, rgb.shape[-2:])
         return y, cbcr, rgb_hat
 
-    def training_step(self, x: torch.Tensor, batch_idx: int) -> torch.Tensor:
+    def __step(self, x: torch.Tensor, stage: str = 'val') -> torch.Tensor:
         x = x.to(self.device)
         y, cbcr, x_hat = self(x)
         metrics = {
-            name: metric(x, x_hat)
+            name: metric(x=x, x_hat=x_hat, y=y, cbcr=cbcr)
             for name, metric in self.metrics.items()
         }
-        self.log('train_loss', metrics[self.main_loss])
+        loss = sum(metrics[name] * self.loss_dict[name] for name in self.loss_dict)
+        self.log(f'{stage}_loss', metrics[self.main_loss])
         for name, metric in metrics.items():
-            self.log(f'train_{name}', metric)
-        return metrics[self.main_loss]
+            self.log(f'{stage}_{name}', metric)
+        return loss
 
+    def training_step(self, x: torch.Tensor, batch_idx: int) -> torch.Tensor:
+        return self.__step(x, stage='train')
+
+    @torch.no_grad()
     def validation_step(self, x: torch.Tensor, batch_idx: int) -> torch.Tensor:
-        x = x.to(self.device)
-        y, cbcr, x_hat = self(x)
-        metrics = {
-            name: metric(x, x_hat)
-            for name, metric in self.metrics.items()
-        }
-        self.log('val_loss', metrics[self.main_loss])
-        for name, metric in metrics.items():
-            self.log(f'val_{name}', metric)
-        return metrics[self.main_loss]
+        return self.__step(x, stage='val')
+
+    @torch.no_grad()
+    def test_step(self, x: torch.Tensor, batch_idx: int) -> torch.Tensor:
+        return self.__step(x, stage='test')
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.epsilon_theta.parameters(),
