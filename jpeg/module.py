@@ -19,7 +19,8 @@ class ExtendedJPEGModule(LightningModule):
                  lr: float = 1e-3,
                  weight_decay: float = 1e-6):
         super().__init__()
-        self.jpeg = ExtendedJPEG(downsample=downsample, upsample=upsample)
+        self.ejpeg = ExtendedJPEG(downsample=downsample, upsample=upsample)
+        self.jpeg = ExtendedJPEG()
         self.metrics = metrics or {
             'deltaE': DeltaE2000(),
             'mse': MSE(),
@@ -32,34 +33,38 @@ class ExtendedJPEGModule(LightningModule):
         self.hparams.update(lr=lr,
                             weight_decay=weight_decay)
 
-    def forward(self, rgb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        y, cbcr = self.jpeg.encode(rgb)
-        rgb_hat = self.jpeg.decode(y, cbcr, rgb.shape[-2:])
+    def forward(self, model: ExtendedJPEG, rgb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        y, cbcr = model.encode(rgb)
+        rgb_hat = model.decode(y, cbcr, rgb.shape[-2:])
         return y, cbcr, rgb_hat
 
-    def __step(self, x: torch.Tensor, stage: str = 'val') -> torch.Tensor:
-        x = x.to(self.device)
-        y, cbcr, x_hat = self(x)
+    def __step_model(self, model: ExtendedJPEG, x: torch.Tensor, stage: str) -> torch.Tensor:
+        y, cbcr, x_hat = self(model, x)
         metrics = {
             name: metric(x=x, x_hat=x_hat, y=y, cbcr=cbcr)
             for name, metric in self.metrics.items()
         }
-        loss = sum(metrics[name] * self.loss_dict[name] for name in self.loss_dict)
-        self.log(f'{stage}_loss', metrics[self.main_loss])
         for name, metric in metrics.items():
             self.log(f'{stage}_{name}', metric)
+        loss = sum(metrics[name] * self.loss_dict[name] for name in self.loss_dict)
+        self.log(f'{stage}_loss', loss)
         return loss
 
+    def __step(self, x: torch.Tensor, stage: str) -> torch.Tensor:
+        x = x.to(self.device)
+        self.__step_model(self.jpeg, x, f'{stage}_jpeg')
+        return self.__step_model(self.ejpeg, x, stage)
+
     def training_step(self, x: torch.Tensor, batch_idx: int) -> torch.Tensor:
-        return self.__step(x, stage='train')
+        return self.__step(x, 'train')
 
     @torch.no_grad()
     def validation_step(self, x: torch.Tensor, batch_idx: int) -> torch.Tensor:
-        return self.__step(x, stage='val')
+        return self.__step(x, 'val')
 
     @torch.no_grad()
     def test_step(self, x: torch.Tensor, batch_idx: int) -> torch.Tensor:
-        return self.__step(x, stage='test')
+        return self.__step(x, 'test')
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.epsilon_theta.parameters(),

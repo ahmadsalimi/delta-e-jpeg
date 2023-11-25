@@ -1,9 +1,11 @@
 from pytorch_lightning.cli import LightningCLI
+
+from datamodule import DataModule
 from jpeg.module import ExtendedJPEGModule
 
 
 def cli_main():
-    cli = LightningCLI(ExtendedJPEGModule), #JPEGDataModule)
+    cli = LightningCLI(ExtendedJPEGModule, DataModule)
     # note: don't call fit!!
 
 
