@@ -6,6 +6,7 @@ import kornia as K
 
 
 class DeltaE76(nn.Module):
+    """Compute the delta E 76 between two batches of images."""
 
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         """Compute the delta E 76 between two batches of images.
@@ -25,6 +26,13 @@ class DeltaE76(nn.Module):
 
 
 class DeltaE2000(nn.Module):
+    """Compute the delta E 2000 between two batches of images.
+
+    Args:
+        k_l (float): The weight of the lightness. Defaults to 1.
+        k_c (float): The weight of the chroma. Defaults to 1.
+        k_h (float): The weight of the hue. Defaults to 1.
+    """
 
     def __init__(self, k_l: float = 1, k_c: float = 1, k_h: float = 1):
         super().__init__()
