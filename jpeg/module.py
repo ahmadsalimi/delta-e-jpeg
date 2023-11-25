@@ -5,6 +5,7 @@ from pytorch_lightning import LightningModule
 from torch import nn
 
 from jpeg.jpeg import ExtendedJPEG
+from jpeg.ds.conv import ConvDownsample, ConvUpsample
 from metric.delta_e import DeltaE2000
 from metric.mse import MSE
 from metric.psnr import PSNR
@@ -19,6 +20,8 @@ class ExtendedJPEGModule(LightningModule):
                  lr: float = 1e-3,
                  weight_decay: float = 1e-6):
         super().__init__()
+        downsample = downsample or ConvDownsample(64)
+        upsample = upsample or ConvUpsample(64)
         self.ejpeg = ExtendedJPEG(downsample=downsample, upsample=upsample)
         self.jpeg = ExtendedJPEG()
         self.metrics = metrics or {

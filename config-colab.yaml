@@ -1,0 +1,14 @@
+seed_everything: 37
+trainer:
+
+  check_val_every_n_epoch: 1
+
+  max_epochs: 4
+
+  default_root_dir: ./drive/MyDrive/DeltaEJPEG/base
+
+  accelerator: gpu
+  devices: 1
+
+data:
+  batch_size: 256
