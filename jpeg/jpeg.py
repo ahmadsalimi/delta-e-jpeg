@@ -77,6 +77,7 @@ class ExtendedJPEG(nn.Module):
             torch.Tensor: The reconstructed images in RGB space with shape :math:`(B, 3, H, W)`.
         """
         ycbcr = K.color.rgb_to_ycbcr(rgb) - 0.5     # B x 3 x H x W
+        print(f'ycbcr: {ycbcr.min()}, {ycbcr.max()}')
 
         # downsample cb and cr
         y, cbcr = self.downsample(ycbcr)            # B x 1 x H x W, B x 2 x H/2 x W/2
