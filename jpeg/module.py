@@ -7,6 +7,7 @@ from torch import nn
 from jpeg.jpeg import ExtendedJPEG
 from jpeg.ds.conv import ConvDownsample, ConvUpsample
 from metric.delta_e import DeltaE76, DeltaE2000
+from metric.mae import MAE
 from metric.mse import MSE
 from metric.psnr import PSNR
 from metric.sparsity import Sparsity
@@ -28,11 +29,12 @@ class ExtendedJPEGModule(LightningModule):
             'deltaE76': DeltaE76(),
             'deltaE2000': DeltaE2000(),
             'mse': MSE(),
+            'mae': MAE(),
             # 'psnr': PSNR(data_range=1),
             # 'sparsity': Sparsity(),
         }
         self.loss_dict = loss_dict or {
-            'mse': 1,
+            'mae': 1,
         }
         self.hparams.update(lr=lr,
                             weight_decay=weight_decay)
@@ -63,7 +65,8 @@ class ExtendedJPEGModule(LightningModule):
         self.log('lr', self.optimizers().param_groups[0]['lr'], prog_bar=True)
         x = x.to(self.device)
         x_hat = self(x)
-        loss = self.metrics['mse'](x=x, x_hat=x_hat) * self.loss_dict['mse']
+        loss = sum(self.metrics[name](x=x, x_hat=x_hat) * weight
+                   for name, weight in self.loss_dict.items())
         self.log('train_loss', loss)
         self.__step(x, 'train')
         return loss

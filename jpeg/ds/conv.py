@@ -105,12 +105,11 @@ class OtherUpsample(nn.Module):
         self.final_kernel_size_ = final_kernel_size
         self.conv = nn.Sequential(                                                  # B x 2 x H x W
             nn.Conv2d(2, channels, final_kernel_size, padding=(final_kernel_size - 1) // 2),  # B x C x H x W
-            nn.Dropout2d(0.5, inplace=True),
+            nn.Dropout2d(0.2, inplace=True),
             nn.ReLU(inplace=True),
             nn.Conv2d(channels, 2, 1),                            # B x 2 x H x W
             *([] if not clamp else [
                 Clamp(-0.5, 0.5),
-                NanChecker('upsample->conv->clamp'),
             ]),
         )
 
