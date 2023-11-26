@@ -34,3 +34,8 @@ def pad_or_crop(image: torch.Tensor, shape: torch.Size) -> torch.Tensor:
         image = F.pad(image, (0, shape[-1] - image.shape[-1]))
     assert image.shape[-2:] == shape[-2:], f"{image.shape[-2:]} != {shape[-2:]}"
     return image
+
+
+def check_nan(val: torch.Tensor, name: str) -> None:
+    if torch.isnan(val).any():
+        raise ValueError(f"NaN detected in {name}.")

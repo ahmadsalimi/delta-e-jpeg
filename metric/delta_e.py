@@ -4,6 +4,8 @@ import torch
 from torch import nn
 import kornia as K
 
+from jpeg.utils import check_nan
+
 
 class DeltaE76(nn.Module):
     """Compute the delta E 76 between two batches of images."""
@@ -87,9 +89,6 @@ class DeltaE2000(nn.Module):
         Returns:
             torch.Tensor: The delta E between the two batches of images with shape :math:`(B)`.
         """
-        def check_nan(val: torch.Tensor, name: str) -> None:
-            if torch.isnan(val).any():
-                raise ValueError(f"NaN detected in {name}.")
         l_x, a_x, b_x = self.__lab(x)                       # B x H x W
         check_nan(l_x, 'l_x')
         check_nan(a_x, 'a_x')

@@ -3,7 +3,7 @@ from typing import Tuple, Optional
 import torch
 from torch import nn
 
-from jpeg.utils import Clamp, pad_or_crop
+from jpeg.utils import Clamp, pad_or_crop, check_nan
 
 
 class ConvDownsample(nn.Module):
@@ -76,8 +76,11 @@ class ConvDownsample(nn.Module):
                 has shape :math:`(B, 2, H / factor[0], W / factor[1])`.
         """
         y = ycbcr[:, :1]                                        # B x 1 x H x W
+        check_nan(y, 'downsample->y')
         cbcr = ycbcr[:, 1:]                                     # B x 2 x H x W
+        check_nan(cbcr, 'downsample->cbcr')
         cbcr = self.conv(cbcr)                                  # B x 2 x H/f x W/f
+        check_nan(cbcr, 'downsample->conv')
         return y, cbcr
 
 
@@ -197,5 +200,7 @@ class ConvUpsample(nn.Module):
             torch.Tensor: The upsampled images with shape :math:`(B, 3, H, W)`.
         """
         cbcr = self.conv(cbcr)                                  # B x 2 x H x W
+        check_nan(cbcr, 'upsample->conv')
         cbcr = pad_or_crop(cbcr, y.shape[-2:])                  # B x 2 x H x W
+        check_nan(cbcr, 'upsample->pad_or_crop')
         return torch.cat([y, cbcr], dim=1)
