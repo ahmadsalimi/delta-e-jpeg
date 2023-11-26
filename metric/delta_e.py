@@ -95,9 +95,13 @@ class DeltaE2000(nn.Module):
         check_nan(a_x, 'a_x')
         check_nan(b_x, 'b_x')
         l_y, a_y, b_y = self.__lab(x_hat)                   # B x H x W
-        check_nan(l_y, 'l_y')
-        check_nan(a_y, 'a_y')
-        check_nan(b_y, 'b_y')
+        try:
+            check_nan(l_y, 'l_y')
+            check_nan(a_y, 'a_y')
+            check_nan(b_y, 'b_y')
+        except:
+            print(f'x_hat: {x_hat.min()}, {x_hat.max()}')
+            raise
         delta_l = l_y - l_x                                 # B x H x W
         check_nan(delta_l, 'delta_l')
         l_bar = self.__bar(l_x, l_y)                    # B x H x W
