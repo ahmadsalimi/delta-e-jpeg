@@ -59,6 +59,7 @@ class ExtendedJPEGModule(LightningModule):
         return self.__step_model(self.ejpeg, x, stage)
 
     def training_step(self, x: torch.Tensor, batch_idx: int) -> torch.Tensor:
+        self.log('lr', self.optimizers().param_groups[0]['lr'], prog_bar=True)
         return self.__step(x, 'train')
 
     @torch.no_grad()

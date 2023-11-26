@@ -42,3 +42,4 @@ model:
 #      init: False
       final_kernel_size: null
       clamp: False
+  weight_decay: 1e-4
