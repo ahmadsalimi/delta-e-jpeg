@@ -56,11 +56,11 @@ class DeltaE2000(nn.Module):
 
     @staticmethod
     def __a_prime(a: torch.Tensor, c_bar: torch.Tensor) -> torch.Tensor:
-        return a + a / 2 * (1 - (c_bar ** 7 / (c_bar ** 7 + 25 ** 7)).sqrt())
+        return a + a / 2 * (1 - (c_bar ** 7 / (c_bar ** 7 + 25 ** 7) + 1e-8).sqrt())
 
     @staticmethod
     def __c_prime(a_prime: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-        return (a_prime ** 2 + b ** 2).sqrt()
+        return (a_prime ** 2 + b ** 2 + 1e-8).sqrt()
 
     @staticmethod
     def __h(a_prime: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
@@ -129,7 +129,7 @@ class DeltaE2000(nn.Module):
         check_nan(h_y, 'h_y')
         delta_h = self.__delta_h(h_x, h_y)                  # B x H x W
         check_nan(delta_h, 'delta_h')
-        delta_H = 2 * (c_x_prime * c_y_prime).sqrt() * \
+        delta_H = 2 * (c_x_prime * c_y_prime + 1e-8).sqrt() * \
             torch.sin(torch.deg2rad(delta_h) / 2)           # B x H x W
         check_nan(delta_H, 'delta_H')
         h_bar = self.__h_bar(h_x, h_y)                      # B x H x W
@@ -140,13 +140,13 @@ class DeltaE2000(nn.Module):
             0.2 * torch.cos(torch.deg2rad(4 * h_bar - 63))  # B x H x W
         check_nan(t, 't')
         s_l = 1 + 0.015 * (l_bar - 50) ** 2 / \
-            (20 + (l_bar - 50) ** 2).sqrt()                 # B x H x W
+            (20 + (l_bar - 50) ** 2 + 1e-8).sqrt()                 # B x H x W
         check_nan(s_l, 's_l')
         s_c = 1 + 0.045 * c_bar_prime                       # B x H x W
         check_nan(s_c, 's_c')
         s_h = 1 + 0.015 * c_bar_prime * t                   # B x H x W
         check_nan(s_h, 's_h')
-        r_t = -2 * (c_bar_prime ** 7 / (c_bar_prime ** 7 + 25 ** 7)).sqrt() * \
+        r_t = -2 * (c_bar_prime ** 7 / (c_bar_prime ** 7 + 25 ** 7) + 1e-8).sqrt() * \
             torch.sin(
                 torch.deg2rad(
                     60 * torch.exp(
