@@ -64,7 +64,7 @@ class DeltaE2000(nn.Module):
 
     @staticmethod
     def __h(a_prime: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-        return torch.rad2deg(torch.atan2(b, a_prime))
+        return torch.rad2deg(torch.atan2(b + 1e-8, a_prime))
 
     @staticmethod
     def __delta_h(h_x: torch.Tensor, h_y: torch.Tensor) -> torch.Tensor:
