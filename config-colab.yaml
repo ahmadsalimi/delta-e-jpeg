@@ -17,11 +17,11 @@ trainer:
   callbacks:
     - class_path: pytorch_lightning.callbacks.ModelCheckpoint
       init_args:
-        monitor: val_deltaE
+        monitor: val_deltaE76
         mode: min
         save_top_k: 1
         save_last: True
-        filename: '{epoch:02d}-{val_deltaE:.2f}'
+        filename: '{epoch:02d}-{val_deltaE76:.2f}'
         dirpath: ./drive/MyDrive/DeltaEJPEG/base/checkpoints
 
     - class_path: pytorch_lightning.callbacks.RichProgressBar
@@ -42,7 +42,7 @@ model:
     #    class_path: jpeg.ds.naive.NaiveUpsample
     class_path: jpeg.ds.conv.OtherUpsample
     init_args:
-      channels: 8
+      channels: 64
   #      clamp: False
   lr: 1e-2
   weight_decay: 1e-3
