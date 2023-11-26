@@ -39,3 +39,4 @@ model:
     init_args:
       channels: 8
       init: False
+      final_kernel_size: None
