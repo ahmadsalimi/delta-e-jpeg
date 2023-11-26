@@ -5,7 +5,7 @@ trainer:
 
   max_epochs: 50
 
-  default_root_dir: ./drive/MyDrive/DeltaEJPEG/base
+  default_root_dir: ./drive/MyDrive/DeltaEJPEG/naive-other-64-q30
 
   accelerator: gpu
   devices: 1
@@ -22,7 +22,7 @@ trainer:
         save_top_k: 1
         save_last: True
         filename: '{epoch:02d}-{val_deltaE76:.2f}-{val_deltaE2000:.2f}'
-        dirpath: ./drive/MyDrive/DeltaEJPEG/base/checkpoints
+        dirpath: ./drive/MyDrive/DeltaEJPEG/naive-other-64-q30/checkpoints
 
     - class_path: pytorch_lightning.callbacks.RichProgressBar
 
@@ -44,5 +44,6 @@ model:
     init_args:
       channels: 64
   #      clamp: False
+  quality: 30
   lr: 1e-2
   weight_decay: 1e-3

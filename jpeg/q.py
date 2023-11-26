@@ -1,4 +1,7 @@
+from typing import Literal
+
 import torch
+from torch import nn
 
 # Quantization tables
 Q_y = torch.tensor([[16, 11, 10, 16, 24, 40, 51, 61],
@@ -20,31 +23,49 @@ Q_c = torch.tensor([[17, 18, 24, 47, 99, 99, 99, 99],
                     [99, 99, 99, 99, 99, 99, 99, 99]])
 
 
-def __q(x: torch.Tensor, Q: torch.Tensor) -> torch.Tensor:
+def __apply_quality(Q: torch.Tensor, quality: int = 50) -> torch.Tensor:
+    """Get the quantization table for a given quality factor.
+
+    Args:
+        Q (torch.Tensor): The quantization table with shape :math:`(M, N)`.
+        quality (int): The quality factor.
+
+    Returns:
+        torch.Tensor: The quantization table.
+    """
+    assert 1 <= quality <= 100, f'Quality factor must be in [1, 100], got {quality}'
+    s = 5000 / quality if quality < 50 else 200 - 2 * quality
+    Q = ((s * Q + 50) / 100).floor().clamp(1)
+    return Q
+
+
+def q(x: torch.Tensor, Q: torch.Tensor, quality: int = 50) -> torch.Tensor:
     """Quantize a channel.
 
     Args:
         x (torch.Tensor): The channel to quantize with shape :math:`(*, M, N)`.
         Q (torch.Tensor): The quantization table with shape :math:`(M, N)`.
+        quality (float): The quality factor. Defaults to 50.
 
     Returns:
         torch.Tensor: The quantized channel with shape :math:`(*, M, N)`.
     """
-    Q = Q.to(x.device)
+    Q = __apply_quality(Q, quality).to(x.device)
     return (x * 100 / Q).round()       # * x M x N
 
 
-def __iq(x: torch.Tensor, Q: torch.Tensor) -> torch.Tensor:
+def iq(x: torch.Tensor, Q: torch.Tensor, quality: int = 50) -> torch.Tensor:
     """Inverse quantize a channel.
 
     Args:
         x (torch.Tensor): The channel to inverse quantize with shape :math:`(*, M, N)`.
         Q (torch.Tensor): The quantization table with shape :math:`(M, N)`.
+        quality (float): The quality factor. Defaults to 50.
 
     Returns:
         torch.Tensor: The inverse quantized channel with shape :math:`(*, M, N)`.
     """
-    Q = Q.to(x.device)
+    Q = __apply_quality(Q, quality).to(x.device)
     return x * Q / 100                  # * x M x N
 
 
@@ -57,7 +78,7 @@ def q_y(y: torch.Tensor) -> torch.Tensor:
     Returns:
         torch.Tensor: The quantized luminance channel with shape :math:`(*, 8, 8)`.
     """
-    return __q(y, Q_y)
+    return q(y, Q_y)
 
 
 def q_c(c: torch.Tensor) -> torch.Tensor:
@@ -69,7 +90,7 @@ def q_c(c: torch.Tensor) -> torch.Tensor:
     Returns:
         torch.Tensor: The quantized chrominance channel with shape :math:`(*, 8, *, 8, *)`.
     """
-    return __q(c, Q_c)
+    return q(c, Q_c)
 
 
 def iq_y(y: torch.Tensor) -> torch.Tensor:
@@ -81,7 +102,7 @@ def iq_y(y: torch.Tensor) -> torch.Tensor:
     Returns:
         torch.Tensor: The inverse quantized luminance channel with shape :math:`(*, 8, *, 8, *)`.
     """
-    return __iq(y, Q_y)
+    return iq(y, Q_y)
 
 
 def iq_c(c: torch.Tensor) -> torch.Tensor:
@@ -93,4 +114,39 @@ def iq_c(c: torch.Tensor) -> torch.Tensor:
     Returns:
         torch.Tensor: The inverse quantized chrominance channel with shape :math:`(*, 8, *, 8, *)`.
     """
-    return __iq(c, Q_c)
+    return iq(c, Q_c)
+
+
+class Quantizer:
+    """Quantize and inverse quantize a channel.
+
+    Args:
+        mode (Literal['y', 'c']): The channel to quantize, either luminance ('y') or chrominance ('c').
+        quality (int): The quality factor. Defaults to 50.
+    """
+
+    def __init__(self, mode: Literal['y', 'c'], quality: int = 50):
+        self.Q = Q_y if mode == 'l' else Q_c
+        self.quality = quality
+
+    def q(self, x: torch.Tensor) -> torch.Tensor:
+        """Quantize a channel.
+
+        Args:
+            x (torch.Tensor): The channel to quantize with shape :math:`(*, M, N)`.
+
+        Returns:
+            torch.Tensor: The quantized channel with shape :math:`(*, M, N)`.
+        """
+        return q(x, self.Q, self.quality)
+
+    def iq(self, x: torch.Tensor) -> torch.Tensor:
+        """Inverse quantize a channel.
+
+        Args:
+            x (torch.Tensor): The channel to inverse quantize with shape :math:`(*, M, N)`.
+
+        Returns:
+            torch.Tensor: The inverse quantized channel with shape :math:`(*, M, N)`.
+        """
+        return iq(x, self.Q, self.quality)

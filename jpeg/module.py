@@ -16,6 +16,7 @@ from metric.sparsity import Sparsity
 class ExtendedJPEGModule(LightningModule):
     def __init__(self, downsample: Optional[nn.Module] = None,
                  upsample: Optional[nn.Module] = None,
+                 quality: int = 50,
                  metrics: Optional[Dict[str, nn.Module]] = None,
                  loss_dict: Optional[Dict[str, float]] = None,
                  lr: float = 1e-3,
@@ -23,7 +24,7 @@ class ExtendedJPEGModule(LightningModule):
         super().__init__()
         downsample = downsample or ConvDownsample(64)
         upsample = upsample or ConvUpsample(64)
-        self.ejpeg = ExtendedJPEG(downsample=downsample, upsample=upsample)
+        self.ejpeg = ExtendedJPEG(downsample=downsample, upsample=upsample, quality=quality)
         self.jpeg = ExtendedJPEG()
         self.metrics = metrics or {
             'deltaE76': DeltaE76(),
@@ -37,7 +38,8 @@ class ExtendedJPEGModule(LightningModule):
             'mae': 1,
         }
         self.hparams.update(lr=lr,
-                            weight_decay=weight_decay)
+                            weight_decay=weight_decay,
+                            quality=quality)
 
     def forward(self, rgb: torch.Tensor) -> Tuple[torch.Tensor]:
         return self.ejpeg(rgb)

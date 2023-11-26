@@ -7,17 +7,20 @@ import kornia as K
 
 from jpeg.dct import dct2d, idct2d
 from jpeg.ds.naive import NaiveDownsample, NaiveUpsample
-from jpeg.q import q_y, iq_y, q_c, iq_c
+from jpeg.q import Quantizer
 
 
 class ExtendedJPEG(nn.Module):
 
-    def __init__(self, downsample: Optional[nn.Module] = None, upsample: Optional[nn.Module] = None):
+    def __init__(self, downsample: Optional[nn.Module] = None, upsample: Optional[nn.Module] = None,
+                 quality: int = 50):
         super().__init__()
         self.block_size = 8
         # downsample cb and cr by 4:2:0
         self.downsample = downsample or NaiveDownsample(factor=(2, 2))
         self.upsample = upsample or NaiveUpsample()
+        self.q_y = Quantizer('y', quality=quality)
+        self.q_c = Quantizer('c', quality=quality)
 
     def __zero_pad(self, image: torch.Tensor) -> torch.Tensor:
         """Pad a batch of images to be a multiple of the block size.
@@ -116,8 +119,8 @@ class ExtendedJPEG(nn.Module):
         cbcr = dct2d(cbcr)                          # B x 2 x H/16 x W/16 x 8 x 8
 
         # quantize
-        y = q_y(y)                                  # B x 1 x H/8 x W/8 x 8 x 8
-        cbcr = q_c(cbcr)                            # B x 2 x H/16 x W/16 x 8 x 8
+        y = self.q_y.q(y)                                  # B x 1 x H/8 x W/8 x 8 x 8
+        cbcr = self.q_c.q(cbcr)                            # B x 2 x H/16 x W/16 x 8 x 8
 
         return y, cbcr
 
@@ -133,8 +136,8 @@ class ExtendedJPEG(nn.Module):
             torch.Tensor: The decoded images in RGB space with shape :math:`(B, 3, H, W)`.
         """
         # dequantize
-        y = iq_y(y)                                 # B x 1 x H/8 x W/8 x 8 x 8
-        cbcr = iq_c(cbcr)                           # B x 2 x H/16 x W/16 x 8 x 8
+        y = self.q_y.iq(y)                                 # B x 1 x H/8 x W/8 x 8 x 8
+        cbcr = self.q_c.iq(cbcr)                           # B x 2 x H/16 x W/16 x 8 x 8
 
         # apply idct
         y = idct2d(y)                               # B x 1 x H/8 x W/8 x 8 x 8
