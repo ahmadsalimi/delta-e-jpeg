@@ -18,7 +18,8 @@ class ConvDownsample(nn.Module):
     """
 
     def __init__(self, channels: int, kernel_size: int = 2,
-                 factor: Tuple[int, int] = (2, 2), init: bool = True):
+                 factor: Tuple[int, int] = (2, 2), init: bool = True,
+                 clamp: bool = True):
         super().__init__()
         self.channels = channels
         self.kernel_size = kernel_size
@@ -28,7 +29,9 @@ class ConvDownsample(nn.Module):
                                               (kernel_size - factor[1] + 1) // 2)),     # B x C x H/f x W/f
             nn.ReLU(inplace=True),
             nn.Conv2d(channels, 2, 1),                            # B x 2 x H/f x W/f
-            Clamp(-0.5, 0.5),
+            *([] if not clamp else [
+                Clamp(-0.5, 0.5),
+            ]),
         )
         if init:
             self._init_weights()
@@ -79,7 +82,7 @@ class ConvUpsample(nn.Module):
     """
 
     def __init__(self, channels: int, kernel_size: int = 2, factor: Tuple[int, int] = (2, 2),
-                 final_kernel_size: Optional[int] = 3, init: bool = True):
+                 final_kernel_size: Optional[int] = 3, init: bool = True, clamp: bool = True):
         super().__init__()
         self.channels = channels
         self.kernel_size = kernel_size
@@ -99,7 +102,9 @@ class ConvUpsample(nn.Module):
                 nn.Conv2d(channels, 2, final_kernel_size,               # B x 2 x H x W
                           padding=(final_kernel_size - 1) // 2),
             ]),
-            Clamp(-0.5, 0.5),
+            *([] if not clamp else [
+                Clamp(-0.5, 0.5),
+            ]),
         )
         if init:
             self._init_weights()

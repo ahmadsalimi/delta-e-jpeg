@@ -18,7 +18,8 @@ class FullConvDownsample(nn.Module):
             use ``factor=(1, 2)``. Defaults to (2, 2).
     """
 
-    def __init__(self, channels: int, kernel_size: int = 2, factor: Tuple[int, int] = (2, 2), init: bool = True):
+    def __init__(self, channels: int, kernel_size: int = 2, factor: Tuple[int, int] = (2, 2),
+                 init: bool = True, clamp: bool = True):
         super().__init__()
         self.channels = channels
         self.kernel_size = kernel_size
@@ -28,7 +29,9 @@ class FullConvDownsample(nn.Module):
                                               (kernel_size - factor[1] + 1) // 2)),
             nn.ReLU(inplace=True),
             nn.Conv2d(channels, 2, 1),                        # B x 2 x H/f x W/f
-            Clamp(-0.5, 0.5),
+            *([] if not clamp else [
+                Clamp(-0.5, 0.5),
+            ]),
         )
         if init:
             self._init_weights()
@@ -82,7 +85,8 @@ class FullConvUpsample(nn.Module):
     """
 
     def __init__(self, channels: int, kernel_size: int = 2, factor: Tuple[int, int] = (2, 2),
-                 final_kernel_size: Optional[int] = 3, reconstruct_y: bool = False, init: bool = True):
+                 final_kernel_size: Optional[int] = 3, reconstruct_y: bool = False,
+                 init: bool = True, clamp: bool = True):
         if not final_kernel_size and reconstruct_y:
             warnings.warn("final_kernel_size is None, but reconstruct_y is True. "
                           "reconstruct_y will be ignored.")
@@ -110,7 +114,9 @@ class FullConvUpsample(nn.Module):
                 nn.Conv2d(channels + 1, 2 + reconstruct_y, final_kernel_size,       # B x {2,3} x H x W
                           padding=(final_kernel_size - 1) // 2),
             ]),
-            Clamp(-0.5, 0.5),
+            *([] if not clamp else [
+                Clamp(-0.5, 0.5),
+            ]),
         )
         if init:
             self._init_weights()

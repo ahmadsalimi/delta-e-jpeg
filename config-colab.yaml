@@ -32,11 +32,13 @@ model:
   downsample:
     class_path: jpeg.ds.conv.ConvDownsample
     init_args:
-      channels: 8
+      channels: 32
       init: False
+      clamp: False
   upsample:
     class_path: jpeg.ds.conv.ConvUpsample
     init_args:
-      channels: 8
+      channels: 32
       init: False
       final_kernel_size: null
+      clamp: False
