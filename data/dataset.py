@@ -1,8 +1,9 @@
 import glob
 import os
 
+import torch
+from PIL import Image
 from torch.utils.data import Dataset
-import kornia as K
 
 
 class ImageFolder(Dataset):
@@ -13,8 +14,8 @@ class ImageFolder(Dataset):
         self.transform = transform
         self.files = glob.glob(os.path.join(root, '*.png'))
 
-    def __getitem__(self, index: int):
-        image = K.io.load_image(self.files[index], K.io.ImageLoadType.RGB32)
+    def __getitem__(self, index: int) -> torch.Tensor:
+        image = Image.open(self.files[index])
         if self.transform is not None:
             image = self.transform(image)
         return image
