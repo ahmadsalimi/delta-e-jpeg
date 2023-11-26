@@ -12,6 +12,8 @@ trainer:
 
   log_every_n_steps: 1
 
+  detect_anomaly=True
+
   callbacks:
   - class_path: pytorch_lightning.callbacks.ModelCheckpoint
     init_args:
