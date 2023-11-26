@@ -42,7 +42,7 @@ model:
     #    class_path: jpeg.ds.naive.NaiveUpsample
     class_path: jpeg.ds.conv.OtherUpsample
     init_args:
-      channels: 128
+      channels: 8
   #      clamp: False
   lr: 1e-2
   weight_decay: 1e-3
