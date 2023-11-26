@@ -76,8 +76,21 @@ class ExtendedJPEG(nn.Module):
         Returns:
             torch.Tensor: The reconstructed images in RGB space with shape :math:`(B, 3, H, W)`.
         """
-        y, cbcr = self.encode(rgb)
-        return self.decode(y, cbcr, rgb.shape[-2:])
+        ycbcr = K.color.rgb_to_ycbcr(rgb) - 0.5     # B x 3 x H x W
+
+        # downsample cb and cr
+        y, cbcr = self.downsample(ycbcr)            # B x 1 x H x W, B x 2 x H/2 x W/2
+
+        # upsample cb and cr
+        y = self.upsample(y, cbcr)                  # B x 3 x H x W
+
+        # convert to rgb
+        rgb = K.color.ycbcr_to_rgb(y + 0.5)         # B x 3 x H x W
+
+        # clamp to [0, 1]
+        rgb = torch.clamp(rgb, 0, 1)      # B x 3 x H x W
+
+        return rgb
 
     def encode(self, rgb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Encode a batch of images in RGB space into JPEG format.

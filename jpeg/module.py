@@ -1,4 +1,4 @@
-from typing import Tuple, Optional, Dict
+from typing import Tuple, Optional, Dict, Any
 
 import torch
 from pytorch_lightning import LightningModule
@@ -36,39 +36,46 @@ class ExtendedJPEGModule(LightningModule):
         self.hparams.update(lr=lr,
                             weight_decay=weight_decay)
 
-    def forward(self, model: ExtendedJPEG, rgb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward(self, rgb: torch.Tensor) -> Tuple[torch.Tensor]:
+        return self.ejpeg(rgb)
+
+    @staticmethod
+    def full_forward(model: ExtendedJPEG, rgb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         y, cbcr = model.encode(rgb)
         rgb_hat = model.decode(y, cbcr, rgb.shape[-2:])
         return y, cbcr, rgb_hat
 
     def __step_model(self, model: ExtendedJPEG, x: torch.Tensor, stage: str) -> torch.Tensor:
-        y, cbcr, x_hat = self(model, x)
+        y, cbcr, x_hat = self.full_forward(model, x)
         metrics = {
             name: metric(x=x, x_hat=x_hat, y=y, cbcr=cbcr)
             for name, metric in self.metrics.items()
         }
         for name, metric in metrics.items():
             self.log(f'{stage}_{name}', metric, prog_bar=True)
-        loss = sum(metrics[name] * self.loss_dict[name] for name in self.loss_dict)
-        self.log(f'{stage}_loss', loss)
-        return loss
+        return sum(metric * self.loss_dict[name] for name, metric in metrics.items())
 
-    def __step(self, x: torch.Tensor, stage: str) -> torch.Tensor:
-        x = x.to(self.device)
+    def __step(self, x: torch.Tensor, stage: str):
+        loss = self.__step_model(self.ejpeg, x, stage)
         self.__step_model(self.jpeg, x, f'{stage}_jpeg')
-        return self.__step_model(self.ejpeg, x, stage)
+        return loss
 
     def training_step(self, x: torch.Tensor, batch_idx: int) -> torch.Tensor:
         self.log('lr', self.optimizers().param_groups[0]['lr'], prog_bar=True)
-        return self.__step(x, 'train')
+        x = x.to(self.device)
+        x_hat = self(x)
+        loss = self.metrics['deltaE'](x=x, x_hat=x_hat) * self.loss_dict['deltaE']
+        self.log('train_loss', loss)
+        self.__step(x, 'train')
+        return loss
 
     @torch.no_grad()
     def validation_step(self, x: torch.Tensor, batch_idx: int) -> torch.Tensor:
-        return self.__step(x, 'val')
+        return self.__step(x.to(self.device), 'val')
 
     @torch.no_grad()
     def test_step(self, x: torch.Tensor, batch_idx: int) -> torch.Tensor:
-        return self.__step(x, 'test')
+        return self.__step(x.to(self.device), 'test')
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.ejpeg.parameters(),
