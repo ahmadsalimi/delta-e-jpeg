@@ -11,5 +11,5 @@ trainer:
   devices: 1
 
 data:
-  data_dir: ./data
+  data_dir: ./dataset
   batch_size: 256
