@@ -53,7 +53,7 @@ class ExtendedJPEGModule(LightningModule):
         }
         for name, metric in metrics.items():
             self.log(f'{stage}_{name}', metric, prog_bar=True)
-        return sum(metric * self.loss_dict[name] for name, metric in metrics.items())
+        return sum(metrics[name] * weight for name, weight in self.loss_dict.items())
 
     def __step(self, x: torch.Tensor, stage: str):
         loss = self.__step_model(self.ejpeg, x, stage)
