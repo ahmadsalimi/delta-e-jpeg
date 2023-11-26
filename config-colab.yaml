@@ -35,7 +35,7 @@ model:
       channels: 8
       init: False
   upsample:
-    class_path: jpeg.us.conv.ConvUpsample
+    class_path: jpeg.ds.conv.ConvUpsample
     init_args:
       channels: 8
       init: False
