@@ -42,4 +42,3 @@ model:
 #      init: False
       final_kernel_size: null
       clamp: False
-  lr: 1e-2
