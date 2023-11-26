@@ -23,9 +23,6 @@ trainer:
       dirpath: ./drive/MyDrive/DeltaEJPEG/base/checkpoints
 
   - class_path: pytorch_lightning.callbacks.RichProgressBar
-    init_args:
-      theme:
-        metrics_text_delimiter: " | "
 
 data:
   data_dir: ./dataset
