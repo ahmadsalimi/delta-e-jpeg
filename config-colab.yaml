@@ -16,9 +16,7 @@ trainer:
     - class_path: pytorch_lightning.callbacks.RichProgressBar
       init_args:
         theme:
-          class_path: pytorch_lightning.callbacks.progress.rich_progress.RichProgressBarTheme
-          init_args:
-            metrics_text_delimiter: " | "
+          metrics_text_delimiter: " | "
 
     - class_path: pytorch_lightning.callbacks.ModelCheckpoint
       init_args:
