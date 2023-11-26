@@ -32,7 +32,7 @@ class ExtendedJPEGModule(LightningModule):
             # 'sparsity': Sparsity(),
         }
         self.loss_dict = loss_dict or {
-            'deltaE76': 1,
+            'mse': 1,
         }
         self.hparams.update(lr=lr,
                             weight_decay=weight_decay)
@@ -63,7 +63,7 @@ class ExtendedJPEGModule(LightningModule):
         self.log('lr', self.optimizers().param_groups[0]['lr'], prog_bar=True)
         x = x.to(self.device)
         x_hat = self(x)
-        loss = self.metrics['deltaE76'](x=x, x_hat=x_hat) * self.loss_dict['deltaE76']
+        loss = self.metrics['mse'](x=x, x_hat=x_hat) * self.loss_dict['mse']
         self.log('train_loss', loss)
         self.__step(x, 'train')
         return loss
