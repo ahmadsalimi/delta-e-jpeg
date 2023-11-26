@@ -206,6 +206,8 @@ class ConvUpsample(nn.Module):
         Returns:
             torch.Tensor: The upsampled images with shape :math:`(B, 3, H, W)`.
         """
+        check_nan(y, 'upsample->y')
+        check_nan(cbcr, 'upsample->cbcr')
         cbcr = self.conv(cbcr)                                  # B x 2 x H x W
         check_nan(cbcr, 'upsample->conv')
         cbcr = pad_or_crop(cbcr, y.shape[-2:])                  # B x 2 x H x W
