@@ -48,7 +48,7 @@ class ExtendedJPEGModule(LightningModule):
             for name, metric in self.metrics.items()
         }
         for name, metric in metrics.items():
-            self.log(f'{stage}_{name}', metric)
+            self.log(f'{stage}_{name}', metric, prog_bar=True)
         loss = sum(metrics[name] * self.loss_dict[name] for name in self.loss_dict)
         self.log(f'{stage}_loss', loss)
         return loss
