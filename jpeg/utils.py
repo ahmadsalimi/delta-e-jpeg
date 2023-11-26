@@ -39,3 +39,14 @@ def pad_or_crop(image: torch.Tensor, shape: torch.Size) -> torch.Tensor:
 def check_nan(val: torch.Tensor, name: str) -> None:
     if torch.isnan(val).any():
         raise ValueError(f"NaN detected in {name}.")
+
+
+class NanChecker(nn.Module):
+
+    def __init__(self, name: str):
+        super().__init__()
+        self.name = name
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        check_nan(x, self.name)
+        return x

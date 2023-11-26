@@ -3,7 +3,7 @@ from typing import Tuple, Optional
 import torch
 from torch import nn
 
-from jpeg.utils import Clamp, pad_or_crop, check_nan
+from jpeg.utils import Clamp, pad_or_crop, check_nan, NanChecker
 
 
 class ConvDownsample(nn.Module):
@@ -105,21 +105,28 @@ class ConvUpsample(nn.Module):
         self.final_kernel_size_ = final_kernel_size
         self.conv = nn.Sequential(                                                  # B x 2 x H/f x W/f
             nn.Conv2d(2, channels, 1),                         # B x C x H/f x W/f
+            NanChecker('upsample->conv->1'),
             nn.ReLU(inplace=True),
+            NanChecker('upsample->conv->relu'),
             *([
                   nn.ConvTranspose2d(channels, 2, kernel_size,          # B x 2 x H x W
                                      stride=factor, padding=((kernel_size - factor[0]) // 2,
                                                              (kernel_size - factor[1]) // 2)),
+                  NanChecker('upsample->conv->2'),
               ] if final_kernel_size is None else [
                 nn.ConvTranspose2d(channels, channels, kernel_size,                 # B x C x H x W
                                    stride=factor, padding=((kernel_size - factor[0]) // 2,
                                                            (kernel_size - factor[1]) // 2)),
+                NanChecker('upsample->conv->2'),
                 nn.ReLU(inplace=True),
+                NanChecker('upsample->conv->relu2'),
                 nn.Conv2d(channels, 2, final_kernel_size,               # B x 2 x H x W
                           padding=(final_kernel_size - 1) // 2),
+                NanChecker('upsample->conv->3'),
             ]),
             *([] if not clamp else [
                 Clamp(-0.5, 0.5),
+                NanChecker('upsample->conv->clamp'),
             ]),
         )
         if init:
