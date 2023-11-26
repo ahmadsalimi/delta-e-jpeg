@@ -15,16 +15,16 @@ trainer:
   detect_anomaly: True
 
   callbacks:
-  - class_path: pytorch_lightning.callbacks.ModelCheckpoint
-    init_args:
-      monitor: val_deltaE
-      mode: min
-      save_top_k: 1
-      save_last: True
-      filename: '{epoch:02d}-{val_deltaE:.2f}'
-      dirpath: ./drive/MyDrive/DeltaEJPEG/base/checkpoints
+    - class_path: pytorch_lightning.callbacks.ModelCheckpoint
+      init_args:
+        monitor: val_deltaE
+        mode: min
+        save_top_k: 1
+        save_last: True
+        filename: '{epoch:02d}-{val_deltaE:.2f}'
+        dirpath: ./drive/MyDrive/DeltaEJPEG/base/checkpoints
 
-  - class_path: pytorch_lightning.callbacks.RichProgressBar
+    - class_path: pytorch_lightning.callbacks.RichProgressBar
 
 data:
   data_dir: ./dataset
@@ -32,18 +32,17 @@ data:
 
 model:
   downsample:
-    class_path: jpeg.ds.conv.ConvDownsample
-    init_args:
-      channels: 128
-      init: False
-  #      clamp: False
-  upsample:
-    class_path: jpeg.ds.naive.NaiveUpsample
-  #    class_path: jpeg.ds.conv.ConvUpsample
+    class_path: jpeg.ds.naive.NaiveDownsample
+  #    class_path: jpeg.ds.conv.ConvDownsample
   #    init_args:
   #      channels: 128
   #      init: False
-  #      final_kernel_size: null
+  #      clamp: False
+  upsample:
+    #    class_path: jpeg.ds.naive.NaiveUpsample
+    class_path: jpeg.ds.conv.OtherUpsample
+    init_args:
+      channels: 128
   #      clamp: False
   lr: 1e-2
   weight_decay: 1e-3
