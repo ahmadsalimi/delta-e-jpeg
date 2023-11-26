@@ -49,5 +49,5 @@ class NaiveUpsample(nn.Module):
         Returns:
             torch.Tensor: The upsampled images with shape :math:`(B, 3, H, W)`.
         """
-        cbcr = F.interpolate(cbcr, size=y.shape[-2:], mode='bilinear', align_corners=True)
+        cbcr = F.interpolate(cbcr, size=y.shape[-2:], mode='nearest')
         return torch.cat([y, cbcr], dim=1)

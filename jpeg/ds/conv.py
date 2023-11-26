@@ -49,10 +49,12 @@ class ConvDownsample(nn.Module):
         # self.conv[2].weight.data[0, self.channels // 2:].normal_(0, 0.05)
         # self.conv[2].weight.data[1, self.channels // 2:].normal_(1 / (self.channels - self.channels // 2), 0.05)
         # self.conv[2].bias.data.fill_(-0.5)
-        self.conv[0].weight.data[:self.channels // 2, 0].fill_(1 / self.kernel_size ** 2)
+        self.conv[0].weight.data[:self.channels // 2, 0].fill_(0)
+        self.conv[0].weight.data[:self.channels // 2, 0, 0, 0].fill_(1)
         self.conv[0].weight.data[:self.channels // 2, 1].fill_(0)
         self.conv[0].weight.data[self.channels // 2:, 0].fill_(0)
-        self.conv[0].weight.data[self.channels // 2:, 1].fill_(1 / self.kernel_size ** 2)
+        self.conv[0].weight.data[self.channels // 2:, 1].fill_(0)
+        self.conv[0].weight.data[self.channels // 2:, 1, 0, 0].fill_(1)
         self.conv[0].bias.data.fill_(0.5)
 
         self.conv[2].weight.data[0, :self.channels // 2].fill_(1 / (self.channels // 2))
@@ -156,6 +158,7 @@ class ConvUpsample(nn.Module):
         self.conv[0].weight.data[:self.channels // 2, 1].fill_(0)
         self.conv[0].weight.data[self.channels // 2:, 0].fill_(0)
         self.conv[0].weight.data[self.channels // 2:, 1].fill_(1)
+        self.conv[0].bias.data.fill_(0.5)
 
         if self.final_kernel_size_ is None:
             self.conv[2].weight.data[:self.channels // 2, 0].fill_(1 / (self.channels // 2))
