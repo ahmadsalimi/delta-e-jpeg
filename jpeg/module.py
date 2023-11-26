@@ -70,6 +70,6 @@ class ExtendedJPEGModule(LightningModule):
         return self.__step(x, 'test')
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.epsilon_theta.parameters(),
+        return torch.optim.Adam(self.ejpeg.parameters(),
                                 lr=self.hparams['lr'],
                                 weight_decay=self.hparams['weight_decay'])
