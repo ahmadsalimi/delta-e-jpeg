@@ -13,19 +13,19 @@ trainer:
   log_every_n_steps: 1
 
   callbacks:
-    - class_path: pytorch_lightning.callbacks.RichProgressBar
-      init_args:
-        theme:
-          metrics_text_delimiter: " | "
+  - class_path: pytorch_lightning.callbacks.ModelCheckpoint
+    init_args:
+      monitor: val_loss
+      mode: min
+      save_top_k: 1
+      save_last: True
+      filename: '{epoch:02d}-{val_loss:.2f}'
+      dirpath: ./drive/MyDrive/DeltaEJPEG/base/checkpoints
 
-    - class_path: pytorch_lightning.callbacks.ModelCheckpoint
-      init_args:
-        monitor: val_loss
-        mode: min
-        save_top_k: 1
-        save_last: True
-        filename: '{epoch:02d}-{val_loss:.2f}'
-        dirpath: ./drive/MyDrive/DeltaEJPEG/base/checkpoints
+  - class_path: pytorch_lightning.callbacks.RichProgressBar
+    init_args:
+      theme:
+        metrics_text_delimiter: " | "
 
 data:
   data_dir: ./dataset
