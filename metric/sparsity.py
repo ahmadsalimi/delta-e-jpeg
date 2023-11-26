@@ -11,6 +11,4 @@ class Sparsity(nn.Module):
             y (torch.Tensor): The luminance channel with shape :math:`(B, 1, H, W)`.
             cbcr (torch.Tensor): The chrominance channels with shape :math:`(B, 2, H, W)`.
         """
-        y_sparse_count = (y == 0).sum(dim=(-3, -2, -1))
-        cbcr_sparse_count = (cbcr == 0).sum(dim=(-3, -2, -1))
-        return (y_sparse_count + cbcr_sparse_count) / (y.numel() + cbcr.numel())
+        return ((y == 0).sum() + (cbcr == 0).sum()) / (y.numel() + cbcr.numel())
