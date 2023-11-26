@@ -30,6 +30,7 @@ def __q(x: torch.Tensor, Q: torch.Tensor) -> torch.Tensor:
     Returns:
         torch.Tensor: The quantized channel with shape :math:`(*, M, N)`.
     """
+    Q = Q.to(x.device)
     return (x * 255 / Q).round()       # * x M x N
 
 
@@ -43,6 +44,7 @@ def __iq(x: torch.Tensor, Q: torch.Tensor) -> torch.Tensor:
     Returns:
         torch.Tensor: The inverse quantized channel with shape :math:`(*, M, N)`.
     """
+    Q = Q.to(x.device)
     return x * Q / 255                  # * x M x N
 
 
