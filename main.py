@@ -1,5 +1,4 @@
 from pytorch_lightning.cli import LightningCLI
-from pytorch_lightning.callbacks import RichProgressBar
 
 from data.datamodule import DataModule
 from jpeg.module import ExtendedJPEGModule
