@@ -45,7 +45,7 @@ class ExtendedJPEGModule(LightningModule):
         rgb_hat = model.decode(y, cbcr, rgb.shape[-2:])
         return y, cbcr, rgb_hat
 
-    def __step_model(self, model: ExtendedJPEG, x: torch.Tensor, stage: str) -> torch.Tensor:
+    def __step_model(self, model: ExtendedJPEG, x: torch.Tensor, stage: str):
         y, cbcr, x_hat = self.full_forward(model, x)
         metrics = {
             name: metric(x=x, x_hat=x_hat, y=y, cbcr=cbcr)
@@ -53,12 +53,10 @@ class ExtendedJPEGModule(LightningModule):
         }
         for name, metric in metrics.items():
             self.log(f'{stage}_{name}', metric, prog_bar=True)
-        return sum(metrics[name] * weight for name, weight in self.loss_dict.items())
 
     def __step(self, x: torch.Tensor, stage: str):
-        loss = self.__step_model(self.ejpeg, x, stage)
+        self.__step_model(self.ejpeg, x, stage)
         self.__step_model(self.jpeg, x, f'{stage}_jpeg')
-        return loss
 
     def training_step(self, x: torch.Tensor, batch_idx: int) -> torch.Tensor:
         self.log('lr', self.optimizers().param_groups[0]['lr'], prog_bar=True)
@@ -70,12 +68,12 @@ class ExtendedJPEGModule(LightningModule):
         return loss
 
     @torch.no_grad()
-    def validation_step(self, x: torch.Tensor, batch_idx: int) -> torch.Tensor:
-        return self.__step(x.to(self.device), 'val')
+    def validation_step(self, x: torch.Tensor, batch_idx: int):
+        self.__step(x.to(self.device), 'val')
 
     @torch.no_grad()
-    def test_step(self, x: torch.Tensor, batch_idx: int) -> torch.Tensor:
-        return self.__step(x.to(self.device), 'test')
+    def test_step(self, x: torch.Tensor, batch_idx: int):
+        self.__step(x.to(self.device), 'test')
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.ejpeg.parameters(),
