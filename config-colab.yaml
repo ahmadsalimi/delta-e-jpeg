@@ -12,4 +12,4 @@ trainer:
 
 data:
   data_dir: ./dataset
-  batch_size: 64
+  batch_size: 8
