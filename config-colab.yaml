@@ -21,7 +21,7 @@ trainer:
       mode: min
       save_top_k: 1
       save_last: True
-      filename: '{v_num}-{epoch:02d}-{val_loss:.2f}'
+      filename: '{epoch:02d}-{val_deltaE:.2f}'
       dirpath: ./drive/MyDrive/DeltaEJPEG/base/checkpoints
 
   - class_path: pytorch_lightning.callbacks.RichProgressBar
@@ -36,13 +36,14 @@ model:
     init_args:
       channels: 128
       init: False
-#      clamp: False
+  #      clamp: False
   upsample:
-    class_path: jpeg.ds.conv.ConvUpsample
-    init_args:
-      channels: 128
-      init: False
-      final_kernel_size: null
-#      clamp: False
-  lr: 1e-3
+    class_path: jpeg.ds.naive.NaiveUpsample
+  #    class_path: jpeg.ds.conv.ConvUpsample
+  #    init_args:
+  #      channels: 128
+  #      init: False
+  #      final_kernel_size: null
+  #      clamp: False
+  lr: 1e-2
   weight_decay: 1e-3

@@ -27,6 +27,7 @@ class ConvDownsample(nn.Module):
             nn.Conv2d(2, channels, kernel_size,
                       stride=factor, padding=((kernel_size - factor[0] + 1) // 2,
                                               (kernel_size - factor[1] + 1) // 2)),     # B x C x H/f x W/f
+            nn.Dropout2d(0.5),
             nn.ReLU(inplace=True),
             nn.Conv2d(channels, 2, 1),                            # B x 2 x H/f x W/f
             *([] if not clamp else [
@@ -105,6 +106,7 @@ class ConvUpsample(nn.Module):
         self.final_kernel_size_ = final_kernel_size
         self.conv = nn.Sequential(                                                  # B x 2 x H/f x W/f
             nn.Conv2d(2, channels, 1),                         # B x C x H/f x W/f
+            nn.Dropout2d(0.5),
             NanChecker('upsample->conv->1'),
             nn.ReLU(inplace=True),
             NanChecker('upsample->conv->relu'),
@@ -117,6 +119,7 @@ class ConvUpsample(nn.Module):
                 nn.ConvTranspose2d(channels, channels, kernel_size,                 # B x C x H x W
                                    stride=factor, padding=((kernel_size - factor[0]) // 2,
                                                            (kernel_size - factor[1]) // 2)),
+                nn.Dropout2d(0.5),
                 NanChecker('upsample->conv->2'),
                 nn.ReLU(inplace=True),
                 NanChecker('upsample->conv->relu2'),
