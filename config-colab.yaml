@@ -22,7 +22,7 @@ trainer:
         save_top_k: 1
         save_last: True
         filename: '{epoch:02d}-{val_deltaE76:.2f}-{val_deltaE2000:.2f}'
-        dirpath: ./drive/MyDrive/DeltaEJPEG/naive-other-64-q30/checkpoints
+        dirpath: ./drive/MyDrive/DeltaEJPEG/ff-naive-other-64-q30/checkpoints
 
     - class_path: pytorch_lightning.callbacks.RichProgressBar
 
