@@ -208,7 +208,12 @@ class ConvUpsample(nn.Module):
         """
         check_nan(y, 'upsample->y')
         check_nan(cbcr, 'upsample->cbcr')
-        cbcr = self.conv(cbcr)                                  # B x 2 x H x W
+        try:
+            cbcr = self.conv(cbcr)                                  # B x 2 x H x W
+        except:
+            print(self.conv[0].weight.data.min(), self.conv[0].weight.data.max(),
+                  self.conv[0].bias.data.min(), self.conv[0].bias.data.max())
+            raise
         check_nan(cbcr, 'upsample->conv')
         cbcr = pad_or_crop(cbcr, y.shape[-2:])                  # B x 2 x H x W
         check_nan(cbcr, 'upsample->pad_or_crop')
