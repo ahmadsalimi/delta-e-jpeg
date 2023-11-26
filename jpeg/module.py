@@ -20,7 +20,8 @@ class ExtendedJPEGModule(LightningModule):
                  metrics: Optional[Dict[str, nn.Module]] = None,
                  loss_dict: Optional[Dict[str, float]] = None,
                  lr: float = 1e-3,
-                 weight_decay: float = 1e-6):
+                 weight_decay: float = 1e-6,
+                 optimizer: str = 'adam'):
         super().__init__()
         downsample = downsample or ConvDownsample(64)
         upsample = upsample or ConvUpsample(64)
@@ -39,7 +40,8 @@ class ExtendedJPEGModule(LightningModule):
         }
         self.hparams.update(lr=lr,
                             weight_decay=weight_decay,
-                            quality=quality)
+                            quality=quality,
+                            optimizer=optimizer)
 
     def forward(self, rgb: torch.Tensor) -> Tuple[torch.Tensor]:
         return self.ejpeg(rgb)
@@ -82,6 +84,11 @@ class ExtendedJPEGModule(LightningModule):
         self.__step(x.to(self.device), 'test')
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.ejpeg.parameters(),
-                                lr=self.hparams['lr'],
-                                weight_decay=self.hparams['weight_decay'])
+        if self.hparams['optimizer'] == 'adam':
+            return torch.optim.Adam(self.ejpeg.parameters(),
+                                    lr=self.hparams['lr'],
+                                    weight_decay=self.hparams['weight_decay'])
+        if self.hparams['optimizer'] == 'sgd':
+            return torch.optim.SGD(self.ejpeg.parameters(),
+                                   lr=self.hparams['lr'],
+                                   weight_decay=self.hparams['weight_decay'])
