@@ -1,0 +1,50 @@
+seed_everything: 37
+trainer:
+
+  check_val_every_n_epoch: 1
+
+  max_epochs: 50
+
+  default_root_dir: ./drive/MyDrive/DeltaEJPEG/ff-conv-other-64-q20-lpips
+
+  accelerator: gpu
+  devices: 1
+
+  log_every_n_steps: 1
+
+#  detect_anomaly: True
+
+  callbacks:
+    - class_path: pytorch_lightning.callbacks.ModelCheckpoint
+      init_args:
+        monitor: val_deltaE2000
+        mode: min
+        save_top_k: 1
+        save_last: True
+        filename: '{epoch:02d}-{val_deltaE76:.2f}-{val_deltaE2000:.2f}'
+
+    - class_path: pytorch_lightning.callbacks.RichProgressBar
+
+data:
+  data_dir: ./dataset
+  batch_size: 8
+
+model:
+  downsample:
+#    class_path: jpeg.ds.naive.NaiveDownsample
+    class_path: jpeg.ds.conv.ConvDownsample
+    init_args:
+      channels: 64
+      init: False
+#      clamp: False
+  upsample:
+#    class_path: jpeg.ds.naive.NaiveUpsample
+    class_path: jpeg.ds.conv.OtherUpsample
+    init_args:
+      channels: 64
+#      clamp: False
+  quality: 20
+  lr: 1e-2
+  weight_decay: 1e-3
+  loss_dict:
+    lpips_alex: 1

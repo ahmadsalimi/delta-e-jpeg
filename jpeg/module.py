@@ -34,7 +34,6 @@ class ExtendedJPEGModule(LightningModule):
             'mse': MSE(),
             'mae': MAE(),
             'lpips_alex': LPIPS(net='alex'),
-            'lpips_vgg': LPIPS(net='vgg'),
             # 'psnr': PSNR(data_range=1),
             # 'sparsity': Sparsity(),
         })
