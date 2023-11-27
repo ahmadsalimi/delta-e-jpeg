@@ -26,7 +26,7 @@ class ExtendedJPEGModule(LightningModule):
         downsample = downsample or ConvDownsample(64)
         upsample = upsample or ConvUpsample(64)
         self.ejpeg = ExtendedJPEG(downsample=downsample, upsample=upsample, quality=quality)
-        self.jpeg = ExtendedJPEG()
+        self.jpeg = ExtendedJPEG(quality=quality)
         self.metrics = metrics or {
             'deltaE76': DeltaE76(),
             'deltaE2000': DeltaE2000(),
