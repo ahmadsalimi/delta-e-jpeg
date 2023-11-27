@@ -7,6 +7,7 @@ from torch import nn
 from jpeg.jpeg import ExtendedJPEG
 from jpeg.ds.conv import ConvDownsample, ConvUpsample
 from metric.delta_e import DeltaE76, DeltaE2000
+from metric.lpips import LPIPS
 from metric.mae import MAE
 from metric.mse import MSE
 from metric.psnr import PSNR
@@ -32,6 +33,8 @@ class ExtendedJPEGModule(LightningModule):
             'deltaE2000': DeltaE2000(),
             'mse': MSE(),
             'mae': MAE(),
+            'lpips_alex': LPIPS(net='alex'),
+            'lpips_vgg': LPIPS(net='vgg'),
             # 'psnr': PSNR(data_range=1),
             # 'sparsity': Sparsity(),
         }

@@ -6,3 +6,4 @@ kornia==0.7.0
 kornia_rs==0.0.8
 pillow
 rich
+lpips
