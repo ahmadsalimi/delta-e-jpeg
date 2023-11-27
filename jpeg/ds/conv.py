@@ -99,13 +99,18 @@ class OtherUpsample(nn.Module):
             no final convolution is applied. Defaults to 3.
     """
 
-    def __init__(self, channels: int, final_kernel_size: int = 3, clamp: bool = True):
+    def __init__(self, channels: int, final_kernel_size: int = 3, clamp: bool = True, n_conv: int = 1):
         super().__init__()
         self.channels = channels
         self.final_kernel_size_ = final_kernel_size
         self.conv = nn.Sequential(                                                  # B x 2 x H x W
             nn.Conv2d(2, channels, final_kernel_size, padding=(final_kernel_size - 1) // 2),  # B x C x H x W
             nn.Dropout2d(0.2, inplace=True),
+            *([
+                nn.ReLU(inplace=True),
+                nn.Conv2d(channels, channels, final_kernel_size, padding=(final_kernel_size - 1) // 2),
+                nn.Dropout2d(0.2, inplace=True),
+            ] * (n_conv - 1)),
             nn.ReLU(inplace=True),
             nn.Conv2d(channels, 2, 1),                            # B x 2 x H x W
             *([] if not clamp else [
