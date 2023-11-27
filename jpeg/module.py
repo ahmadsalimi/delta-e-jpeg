@@ -28,7 +28,7 @@ class ExtendedJPEGModule(LightningModule):
         upsample = upsample or ConvUpsample(64)
         self.ejpeg = ExtendedJPEG(downsample=downsample, upsample=upsample, quality=quality)
         self.jpeg = ExtendedJPEG(quality=quality)
-        self.metrics = metrics or {
+        self.metrics = nn.ModuleDict(metrics or {
             'deltaE76': DeltaE76(),
             'deltaE2000': DeltaE2000(),
             'mse': MSE(),
@@ -37,7 +37,7 @@ class ExtendedJPEGModule(LightningModule):
             'lpips_vgg': LPIPS(net='vgg'),
             # 'psnr': PSNR(data_range=1),
             # 'sparsity': Sparsity(),
-        }
+        })
         self.loss_dict = loss_dict or {
             'mae': 1,
         }
