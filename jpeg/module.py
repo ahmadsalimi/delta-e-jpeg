@@ -49,13 +49,17 @@ class ExtendedJPEGModule(LightningModule):
     # ignore metrics parameters in loading and saving the state dict
     def state_dict(self, *args, **kwargs):
         sd = super().state_dict(*args, **kwargs)
-        del sd['metrics']
+        sd = {
+            key: value
+            for key, value in sd.items()
+            if not key.startswith('metrics.')
+        }
         return sd
 
     def load_state_dict(self, state_dict, *args, **kwargs):
         state_dict = {**state_dict, **{
             key: value
-            for key, value in self.state_dict().items()
+            for key, value in super().state_dict().items()
             if key not in state_dict
         }}
         super().load_state_dict(state_dict, *args, **kwargs)
