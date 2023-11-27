@@ -46,6 +46,16 @@ class ExtendedJPEGModule(LightningModule):
                             quality=quality,
                             optimizer=optimizer)
 
+    # ignore metrics parameters in loading and saving the state dict
+    def state_dict(self, *args, **kwargs):
+        sd = super().state_dict(*args, **kwargs)
+        del sd['metrics']
+        return sd
+
+    def load_state_dict(self, state_dict, *args, **kwargs):
+        state_dict = {**state_dict, 'metrics': self.metrics.state_dict()}
+        super().load_state_dict(state_dict, *args, **kwargs)
+
     def forward(self, rgb: torch.Tensor) -> Tuple[torch.Tensor]:
         return self.ejpeg(rgb)
 
