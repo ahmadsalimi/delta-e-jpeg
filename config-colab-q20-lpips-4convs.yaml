@@ -42,7 +42,7 @@ model:
     class_path: jpeg.ds.conv.OtherUpsample
     init_args:
       channels: 64
-      n_convs: 4
+      n_conv: 4
 #      clamp: False
   quality: 20
   lr: 1e-2
