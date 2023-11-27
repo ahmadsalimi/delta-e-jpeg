@@ -3,7 +3,7 @@ trainer:
 
   check_val_every_n_epoch: 1
 
-  max_epochs: 50
+  max_epochs: 100
 
   default_root_dir: ./drive/MyDrive/DeltaEJPEG/ff-naive-other-64-q20-lpips
 
@@ -17,11 +17,11 @@ trainer:
   callbacks:
     - class_path: pytorch_lightning.callbacks.ModelCheckpoint
       init_args:
-        monitor: val_deltaE2000
+        monitor: val_lpips_alex
         mode: min
         save_top_k: 1
         save_last: True
-        filename: '{epoch:02d}-{val_deltaE76:.2f}-{val_deltaE2000:.2f}'
+        filename: '{epoch:02d}-{val_lpips_alex:.2f}'
 
     - class_path: pytorch_lightning.callbacks.RichProgressBar
 
@@ -44,7 +44,7 @@ model:
       channels: 64
 #      clamp: False
   quality: 20
-  lr: 1e-2
+  lr: 1e-1
   weight_decay: 1e-3
   loss_dict:
     lpips_alex: 1
