@@ -1,7 +1,10 @@
+"""Quantization based on IJG standard quantization tables.
+    See https://stackoverflow.com/a/29216609 for more information.
+"""
 from typing import Literal
 
 import torch
-from torch import nn
+
 
 # Quantization tables
 Q_y = torch.tensor([[16, 11, 10, 16, 24, 40, 51, 61],
