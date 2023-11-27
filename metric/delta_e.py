@@ -42,6 +42,10 @@ class DeltaE2000(nn.Module):
         self.k_c = k_c
         self.k_h = k_h
 
+    @staticmethod
+    def __lab(x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        return K.color.rgb_to_lab(x).unbind(dim=1)
+
     def forward(self, x: torch.Tensor, x_hat: torch.Tensor, *_, **__) -> torch.Tensor:
         l_1, a_1, b_1 = self.__lab(x)                       # B x H x W
         l_2, a_2, b_2 = self.__lab(x_hat)                   # B x H x W
