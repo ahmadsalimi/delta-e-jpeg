@@ -44,7 +44,7 @@ model:
       channels: 64
 #      clamp: False
   quality: 20
-  lr: 1e-1
+  lr: 1e-2
   weight_decay: 1e-3
   loss_dict:
     lpips_alex: 1
