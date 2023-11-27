@@ -53,7 +53,11 @@ class ExtendedJPEGModule(LightningModule):
         return sd
 
     def load_state_dict(self, state_dict, *args, **kwargs):
-        state_dict = {**state_dict, 'metrics': self.metrics.state_dict()}
+        state_dict = {**state_dict, **{
+            key: value
+            for key, value in self.state_dict().items()
+            if key not in state_dict
+        }}
         super().load_state_dict(state_dict, *args, **kwargs)
 
     def forward(self, rgb: torch.Tensor) -> Tuple[torch.Tensor]:
