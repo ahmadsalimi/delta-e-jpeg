@@ -2,6 +2,7 @@ from typing import Sequence
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 from jpeg.unet_blocks.ds import DownBlock, Downsample
 from jpeg.unet_blocks.mid import MiddleBlock
@@ -27,7 +28,7 @@ class UNetUpsample(nn.Module):
         super().__init__()
 
         # Number of resolutions
-        n_resolutions = len(ch_mults)
+        self.n_resolutions = n_resolutions = len(ch_mults)
 
         # Project image into feature map
         self.image_proj = nn.Conv2d(image_channels, n_channels, kernel_size=(3, 3), padding=(1, 1))
@@ -69,8 +70,8 @@ class UNetUpsample(nn.Module):
             up.append(UpBlock(in_channels, out_channels, n_groups=n_groups))
             in_channels = out_channels
             # Up sample at all resolutions except last
-            if i > 0:
-                up.append(Upsample(in_channels))
+            # if i > 0:
+            up.append(Upsample(in_channels))
 
         # Combine the set of modules
         self.up = nn.ModuleList(up)
@@ -80,7 +81,7 @@ class UNetUpsample(nn.Module):
         self.act = Swish()
         self.final = nn.Conv2d(in_channels, image_channels, kernel_size=(3, 3), padding=(1, 1))
 
-    def forward(self, x: torch.Tensor):
+    def _forward(self, x: torch.Tensor):
         """
         * `x` has shape `[batch_size, in_channels, height, width]`
         """
@@ -111,3 +112,17 @@ class UNetUpsample(nn.Module):
 
         # Final normalization and convolution
         return self.final(self.act(self.norm(x)))
+
+    def forward(self, y: torch.Tensor, cbcr: torch.Tensor) -> torch.Tensor:
+        n_ds = self.n_resolutions - 1
+        # pad to be divisible by 2**n_ds
+        H, W = cbcr.shape[-2:]
+        H_pad = (-H) % (2 ** n_ds)
+        W_pad = (-W) % (2 ** n_ds)
+        padding = (W_pad // 2, W_pad - W_pad // 2, H_pad // 2, H_pad - H_pad // 2)
+        cbcr = F.pad(cbcr, padding)
+
+        cbcr = self._forward(cbcr)
+        if y.shape[-2:] != cbcr.shape[-2:]:
+            cbcr = F.interpolate(cbcr, size=y.shape[-2:], mode='bilinear', align_corners=True)
+        return torch.cat((y, cbcr), dim=1)
