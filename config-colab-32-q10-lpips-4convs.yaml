@@ -5,7 +5,7 @@ trainer:
 
   max_epochs: 100
 
-  default_root_dir: ./drive/MyDrive/DeltaEJPEG/ff-naive-other-32-q20-lpips-4convs
+  default_root_dir: ./drive/MyDrive/DeltaEJPEG/ff-naive-other-32-q10-lpips-4convs
 
   accelerator: gpu
   devices: 1
@@ -44,7 +44,7 @@ model:
       channels: 32
       n_conv: 4
 #      clamp: False
-  quality: 20
+  quality: 10
   lr: 1e-3
   weight_decay: 1e-3
   loss_dict:
