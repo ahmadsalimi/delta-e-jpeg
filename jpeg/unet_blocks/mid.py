@@ -16,11 +16,11 @@ class MiddleBlock(nn.Module):
     def __init__(self, n_channels: int, n_groups: int = 32):
         super().__init__()
         self.res1 = ResidualBlock(n_channels, n_channels, n_groups=n_groups)
-        self.attn = AttentionBlock(n_channels, n_groups=n_groups)
-        self.res2 = ResidualBlock(n_channels, n_channels, n_groups=n_groups)
+        # self.attn = AttentionBlock(n_channels, n_groups=n_groups)
+        # self.res2 = ResidualBlock(n_channels, n_channels, n_groups=n_groups)
 
     def forward(self, x: torch.Tensor):
         x = self.res1(x)
-        x = self.attn(x)
-        x = self.res2(x)
+        # x = self.attn(x)
+        # x = self.res2(x)
         return x
