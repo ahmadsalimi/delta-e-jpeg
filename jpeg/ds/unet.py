@@ -77,7 +77,7 @@ class UNetUpsample(nn.Module):
         self.up = nn.ModuleList(up)
 
         # Final normalization and convolution layer
-        self.norm = nn.GroupNorm(8, n_channels)
+        self.norm = nn.GroupNorm(n_groups, n_channels)
         self.act = Swish()
         self.final = nn.Conv2d(in_channels, image_channels, kernel_size=(3, 3), padding=(1, 1))
 
