@@ -140,6 +140,18 @@ class Quantizer:
         """
         return q(x, self.Q, self.quality)
 
+    def mask_out_zeros(self, x: torch.Tensor) -> torch.Tensor:
+        """Mask out the zeros in a quantized channel.
+
+        Args:
+            x (torch.Tensor): The quantized channel with shape :math:`(*, M, N)`.
+
+        Returns:
+            torch.Tensor: The quantized channel with shape :math:`(*, M, N)`.
+        """
+        quantized = self.q(x)
+        return x.masked_fill(quantized == 0, 0)
+
     def iq(self, x: torch.Tensor) -> torch.Tensor:
         """Inverse quantize a channel.
 

@@ -84,6 +84,26 @@ class ExtendedJPEG(nn.Module):
         # downsample cb and cr
         y, cbcr = self.downsample(ycbcr)            # B x 1 x H x W, B x 2 x H/2 x W/2
 
+        # split into blocks
+        y = self.__split_blocks(y)                  # B x 1 x H/8 x W/8 x 8 x 8
+        cbcr = self.__split_blocks(cbcr)            # B x 2 x H/16 x W/16 x 8 x 8
+
+        # apply dct
+        y = dct2d(y)                                # B x 1 x H/8 x W/8 x 8 x 8
+        cbcr = dct2d(cbcr)                          # B x 2 x H/16 x W/16 x 8 x 8
+
+        # mimic quantization
+        y = self.q_y.mask_out_zeros(y)              # B x 1 x H/8 x W/8 x 8 x 8
+        cbcr = self.q_c.mask_out_zeros(cbcr)        # B x 2 x H/16 x W/16 x 8 x 8
+
+        # apply idct
+        y = idct2d(y)                               # B x 1 x H/8 x W/8 x 8 x 8
+        cbcr = idct2d(cbcr)                         # B x 2 x H/16 x W/16 x 8 x 8
+
+        # merge blocks
+        y = self.__merge_blocks(y, shape)           # B x 1 x H x W
+        cbcr = self.__merge_blocks(cbcr, (shape[0] // 2, shape[1] // 2))  # B x 2 x H/2 x W/2
+
         # upsample cb and cr
         y = self.upsample(y, cbcr)                  # B x 3 x H x W
 
