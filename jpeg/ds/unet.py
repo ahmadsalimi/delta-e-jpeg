@@ -248,9 +248,9 @@ class FullUNetUpsample(nn.Module):
         return ycbcr
 
 
-class LowPassUNetUpsample(nn.Module):
+class HighPassUNetUpsample(nn.Module):
     """
-    ## Low-Pass U-Net
+    ## High-Pass U-Net
     """
 
     def __init__(self, n_channels: int = 64,
@@ -353,8 +353,8 @@ class LowPassUNetUpsample(nn.Module):
 
     def forward(self, y: torch.Tensor, cbcr: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         cbcr = F.interpolate(cbcr, size=y.shape[-2:], mode='bilinear', align_corners=True)
-        ycbcr_highpass = torch.cat((y, cbcr), dim=1)
-        ycbcr_lowpass = self._forward(ycbcr_highpass)
+        ycbcr_lp = torch.cat((y, cbcr), dim=1)
+        ycbcr_hp = self._forward(ycbcr_lp)
         # if y.shape[-2:] != cbcr.shape[-2:]:
         #     cbcr = F.interpolate(cbcr, size=y.shape[-2:], mode='bilinear', align_corners=True)
-        return ycbcr_highpass, ycbcr_lowpass
+        return ycbcr_lp, ycbcr_hp

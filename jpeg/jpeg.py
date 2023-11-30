@@ -148,12 +148,12 @@ class ExtendedJPEG(nn.Module):
         cbcr = self.__merge_blocks(cbcr, (shape[0] // 2, shape[1] // 2))  # B x 2 x H/2 x W/2
 
         # upsample cb and cr
-        ycbcr_hp, ycbcr_lp = self.upsample(y, cbcr)              # B x 3 x H x W
+        ycbcr_lp, ycbcr_hp = self.upsample(y, cbcr)              # B x 3 x H x W
 
         # convert to rgb
-        rgb_hp = K.color.ycbcr_to_rgb(ycbcr_hp + 0.5)     # B x 3 x H x W
         rgb_lp = K.color.ycbcr_to_rgb(ycbcr_lp + 0.5)     # B x 3 x H x W
+        rgb_hp = torch.zeros_like(rgb_lp) if ycbcr_hp is None else K.color.ycbcr_to_rgb(ycbcr_hp + 0.5)  # B x 3 x H x W
 
         # clamp to [0, 1]
         # rgb = torch.clamp(rgb, 0, 1)      # B x 3 x H x W
-        return rgb_hp, rgb_lp
+        return rgb_lp, rgb_hp

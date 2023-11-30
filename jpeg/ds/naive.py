@@ -50,6 +50,5 @@ class NaiveUpsample(nn.Module):
             torch.Tensor: The upsampled images with shape :math:`(B, 3, H, W)`.
         """
         cbcr = F.interpolate(cbcr, size=y.shape[-2:], mode='nearest')
-        ycbcr_hp = torch.cat([y, cbcr], dim=1)
-        ycbcr_lp = torch.zeros_like(ycbcr_hp)
-        return ycbcr_hp, ycbcr_lp
+        ycbcr_lp = torch.cat([y, cbcr], dim=1)
+        return ycbcr_lp, None
