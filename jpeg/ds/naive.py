@@ -38,7 +38,7 @@ class NaiveDownsample(nn.Module):
 
 class NaiveUpsample(nn.Module):
 
-    def forward(self, y: torch.Tensor, cbcr: torch.Tensor) -> torch.Tensor:
+    def forward(self, y: torch.Tensor, cbcr: torch.Tensor) -> Tuple[torch.Tensor]:
         """Upsample a batch of images.
 
         Args:
@@ -50,4 +50,6 @@ class NaiveUpsample(nn.Module):
             torch.Tensor: The upsampled images with shape :math:`(B, 3, H, W)`.
         """
         cbcr = F.interpolate(cbcr, size=y.shape[-2:], mode='nearest')
-        return torch.cat([y, cbcr], dim=1)
+        ycbcr_hp = torch.cat([y, cbcr], dim=1)
+        ycbcr_lp = torch.zeros_like(ycbcr_hp)
+        return ycbcr_hp, ycbcr_lp
