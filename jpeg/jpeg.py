@@ -79,6 +79,7 @@ class ExtendedJPEG(nn.Module):
         Returns:
             torch.Tensor: The reconstructed images in RGB space with shape :math:`(B, 3, H, W)`.
         """
+        _, _, H, W = rgb.shape
         ycbcr = K.color.rgb_to_ycbcr(rgb) - 0.5     # B x 3 x H x W
 
         # downsample cb and cr
@@ -101,8 +102,8 @@ class ExtendedJPEG(nn.Module):
         cbcr = idct2d(cbcr)                         # B x 2 x H/16 x W/16 x 8 x 8
 
         # merge blocks
-        y = self.__merge_blocks(y, shape)           # B x 1 x H x W
-        cbcr = self.__merge_blocks(cbcr, (shape[0] // 2, shape[1] // 2))  # B x 2 x H/2 x W/2
+        y = self.__merge_blocks(y, (H, W))   # B x 1 x H x W
+        cbcr = self.__merge_blocks(cbcr, (H // 2, W // 2))  # B x 2 x H/2 x W/2
 
         # upsample cb and cr
         y = self.upsample(y, cbcr)                  # B x 3 x H x W
