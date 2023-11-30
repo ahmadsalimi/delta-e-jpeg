@@ -8,7 +8,7 @@ from jpeg.jpeg import ExtendedJPEG
 from jpeg.ds.conv import ConvDownsample, ConvUpsample
 from metric.delta_e import DeltaE76, DeltaE2000
 from metric.lpips import LPIPS
-from metric.mae import MAE
+from metric.mae import MAE, WorstMAE
 from metric.mse import MSE
 from metric.psnr import PSNR
 from metric.sparsity import Sparsity
@@ -34,6 +34,7 @@ class ExtendedJPEGModule(LightningModule):
             'mse': MSE(),
             'mae': MAE(),
             'lpips_alex': LPIPS(net='alex'),
+            'worst_mae': WorstMAE(th=0.07),
             # 'psnr': PSNR(data_range=1),
             # 'sparsity': Sparsity(),
         })
