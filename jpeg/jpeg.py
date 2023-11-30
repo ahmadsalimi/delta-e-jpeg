@@ -124,7 +124,7 @@ class ExtendedJPEG(nn.Module):
 
         return y, cbcr
 
-    def decode(self, y: torch.Tensor, cbcr: torch.Tensor, shape: Tuple[int, int]) -> torch.Tensor:
+    def decode(self, y: torch.Tensor, cbcr: torch.Tensor, shape: Tuple[int, int]) -> Tuple[torch.Tensor, torch.Tensor]:
         """Decode a batch of images from JPEG format into RGB space.
 
         Args:
@@ -148,11 +148,12 @@ class ExtendedJPEG(nn.Module):
         cbcr = self.__merge_blocks(cbcr, (shape[0] // 2, shape[1] // 2))  # B x 2 x H/2 x W/2
 
         # upsample cb and cr
-        ycbcr = self.upsample(y, cbcr)              # B x 3 x H x W
+        ycbcr_hp, ycbcr_lp = self.upsample(y, cbcr)              # B x 3 x H x W
 
         # convert to rgb
-        rgb = K.color.ycbcr_to_rgb(ycbcr + 0.5)     # B x 3 x H x W
+        rgb_hp = K.color.ycbcr_to_rgb(ycbcr_hp + 0.5)     # B x 3 x H x W
+        rgb_lp = K.color.ycbcr_to_rgb(ycbcr_lp + 0.5)     # B x 3 x H x W
 
         # clamp to [0, 1]
-        rgb = torch.clamp(rgb, 0, 1)      # B x 3 x H x W
-        return rgb
+        # rgb = torch.clamp(rgb, 0, 1)      # B x 3 x H x W
+        return rgb_hp, rgb_lp

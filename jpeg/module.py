@@ -8,7 +8,7 @@ from jpeg.jpeg import ExtendedJPEG
 from jpeg.ds.conv import ConvDownsample, ConvUpsample
 from metric.delta_e import DeltaE76, DeltaE2000
 from metric.lpips import LPIPS
-from metric.mae import MAE
+from metric.mae import MAE, LowPassMAE
 from metric.mse import MSE
 from metric.psnr import PSNR
 from metric.sparsity import Sparsity
@@ -34,6 +34,7 @@ class ExtendedJPEGModule(LightningModule):
             'mse': MSE(),
             'mae': MAE(),
             'lpips_alex': LPIPS(net='alex'),
+            'lp_mae': LowPassMAE()
             # 'psnr': PSNR(data_range=1),
             # 'sparsity': Sparsity(),
         })
@@ -67,15 +68,16 @@ class ExtendedJPEGModule(LightningModule):
         return self.ejpeg(rgb)
 
     @staticmethod
-    def full_forward(model: ExtendedJPEG, rgb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def full_forward(model: ExtendedJPEG, rgb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         y, cbcr = model.encode(rgb)
-        rgb_hat = model.decode(y, cbcr, rgb.shape[-2:])
-        return y, cbcr, rgb_hat
+        rgb_hp, rgb_lp = model.decode(y, cbcr, rgb.shape[-2:])
+        rgb_hat = rgb_hp + rgb_lp
+        return y, cbcr, rgb_hat, rgb_hp, rgb_lp
 
     def __step_model(self, model: ExtendedJPEG, x: torch.Tensor, stage: str):
-        y, cbcr, x_hat = self.full_forward(model, x)
+        y, cbcr, x_hat, x_hp, x_lp = self.full_forward(model, x)
         metrics = {
-            name: metric(x=x, x_hat=x_hat, y=y, cbcr=cbcr)
+            name: metric(x=x, x_hat=x_hat, y=y, cbcr=cbcr, x_hp=x_hp, x_lp=x_lp)
             for name, metric in self.metrics.items()
         }
         for name, metric in metrics.items():
@@ -88,8 +90,8 @@ class ExtendedJPEGModule(LightningModule):
     def training_step(self, x: torch.Tensor, batch_idx: int) -> torch.Tensor:
         self.log('lr', self.optimizers().param_groups[0]['lr'], prog_bar=True)
         x = x.to(self.device)
-        _, _, x_hat = self.full_forward(self.ejpeg, x)
-        loss = sum(self.metrics[name](x=x, x_hat=x_hat) * weight
+        y, cbcr, x_hat, x_hp, x_lp = self.full_forward(self.ejpeg, x)
+        loss = sum(self.metrics[name](x=x, x_hat=x_hat, y=y, cbcr=cbcr, x_hp=x_hp) * weight
                    for name, weight in self.loss_dict.items())
         self.log('train_loss', loss)
         self.__step(x, 'train')
