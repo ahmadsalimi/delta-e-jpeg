@@ -69,14 +69,14 @@ class ExtendedJPEGModule(LightningModule):
     @staticmethod
     def full_forward(model: ExtendedJPEG, rgb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         y, cbcr = model.encode(rgb)
-        rgb_hp, rgb_lp = model.decode(y, cbcr, rgb.shape[-2:])
-        rgb_hat = rgb_hp + rgb_lp
-        return y, cbcr, rgb_hat, rgb_hp, rgb_lp
+        rgb_lp, rgb_hp = model.decode(y, cbcr, rgb.shape[-2:])
+        rgb_hat = rgb_lp + rgb_hp
+        return y, cbcr, rgb_hat, rgb_lp, rgb_hp
 
     def __step_model(self, model: ExtendedJPEG, x: torch.Tensor, stage: str):
-        y, cbcr, x_hat, x_hp, x_lp = self.full_forward(model, x)
+        y, cbcr, x_hat, x_lp, x_hp = self.full_forward(model, x)
         metrics = {
-            name: metric(x=x, x_hat=x_hat, y=y, cbcr=cbcr, x_hp=x_hp, x_lp=x_lp)
+            name: metric(x=x, x_hat=x_hat, y=y, cbcr=cbcr)
             for name, metric in self.metrics.items()
         }
         for name, metric in metrics.items():
@@ -89,8 +89,8 @@ class ExtendedJPEGModule(LightningModule):
     def training_step(self, x: torch.Tensor, batch_idx: int) -> torch.Tensor:
         self.log('lr', self.optimizers().param_groups[0]['lr'], prog_bar=True)
         x = x.to(self.device)
-        y, cbcr, x_hat, x_hp, x_lp = self.full_forward(self.ejpeg, x)
-        loss = sum(self.metrics[name](x=x, x_hat=x_hat, y=y, cbcr=cbcr, x_hp=x_hp, x_lp=x_lp) * weight
+        y, cbcr, x_hat, x_lp, x_hp = self.full_forward(self.ejpeg, x)
+        loss = sum(self.metrics[name](x=x, x_hat=x_hat, y=y, cbcr=cbcr) * weight
                    for name, weight in self.loss_dict.items())
         self.log('train_loss', loss)
         self.__step(x, 'train')
