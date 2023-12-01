@@ -88,8 +88,8 @@ class ExtendedJPEGModule(LightningModule):
     def training_step(self, x: torch.Tensor, batch_idx: int) -> torch.Tensor:
         self.log('lr', self.optimizers().param_groups[0]['lr'], prog_bar=True)
         x = x.to(self.device)
-        y, cbcr, x_hat = self.full_forward(self.ejpeg, x)
-        loss = sum(self.metrics[name](x=x, x_hat=x_hat, y=y, cbcr=cbcr) * weight
+        x_hat = self(x)
+        loss = sum(self.metrics[name](x=x, x_hat=x_hat) * weight
                    for name, weight in self.loss_dict.items())
         self.log('train_loss', loss)
         self.__step(x, 'train')
