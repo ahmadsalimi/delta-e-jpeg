@@ -86,8 +86,8 @@ class ExtendedJPEG(nn.Module):
         y, cbcr = self.downsample(ycbcr)            # B x 1 x H x W, B x 2 x H/2 x W/2
 
         # apply a low-pass filter
-        y = K.filters.gaussian_blur2d(y, (7, 7), (2, 2))  # B x 1 x H x W
-        cbcr = K.filters.gaussian_blur2d(cbcr, (7, 7), (2, 2))  # B x 2 x H/2 x W/2
+        y = K.filters.gaussian_blur2d(y, (10, 10), (3, 3))  # B x 1 x H x W
+        cbcr = K.filters.gaussian_blur2d(cbcr, (10, 10), (3, 3))  # B x 2 x H/2 x W/2
 
         # upsample cb and cr
         y = self.upsample(y, cbcr)                  # B x 3 x H x W

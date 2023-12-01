@@ -3,6 +3,7 @@ from typing import Tuple, Optional, Dict
 import torch
 from pytorch_lightning import LightningModule
 from torch import nn
+from torch.nn import functional as F
 
 from jpeg.jpeg import ExtendedJPEG
 from jpeg.ds.conv import ConvDownsample, ConvUpsample
@@ -68,8 +69,10 @@ class ExtendedJPEGModule(LightningModule):
 
     @staticmethod
     def full_forward(model: ExtendedJPEG, rgb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        rgb = F.pad(F.pad(rgb, (16, 16, 16, 16), mode='reflect'), (16, 16, 16, 16))
         y, cbcr = model.encode(rgb)
         rgb_hat = model.decode(y, cbcr, rgb.shape[-2:])
+        rgb_hat = rgb_hat[..., 32:-32, 32:-32]
         return y, cbcr, rgb_hat
 
     def __step_model(self, model: ExtendedJPEG, x: torch.Tensor, stage: str):
