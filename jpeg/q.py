@@ -140,17 +140,17 @@ class Quantizer:
         """
         return q(x, self.Q, self.quality)
 
-    def mask_out_zeros(self, x: torch.Tensor) -> torch.Tensor:
-        """Mask out the zeros in a quantized channel.
+    def low_pass(self, x: torch.Tensor) -> torch.Tensor:
+        """Low pass filter a channel.
 
         Args:
-            x (torch.Tensor): The quantized channel with shape :math:`(*, M, N)`.
+            x (torch.Tensor): The DCT matrix to low pass filter with shape :math:`(*, M, N)`.
 
         Returns:
-            torch.Tensor: The quantized channel with shape :math:`(*, M, N)`.
+            torch.Tensor: The low pass filtered channel with shape :math:`(*, M, N)`.
         """
-        quantized = self.q(x)
-        return x * (self.Q < 26)
+        f = 1 - (self.Q - self.Q.min()) / (self.Q.max() - self.Q.min())
+        return x * f
 
     def iq(self, x: torch.Tensor) -> torch.Tensor:
         """Inverse quantize a channel.

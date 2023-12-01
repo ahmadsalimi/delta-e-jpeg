@@ -94,8 +94,8 @@ class ExtendedJPEG(nn.Module):
         cbcr = dct2d(cbcr)                          # B x 2 x H/16 x W/16 x 8 x 8
 
         # mimic quantization
-        y = self.q_y.mask_out_zeros(y)              # B x 1 x H/8 x W/8 x 8 x 8
-        cbcr = self.q_c.mask_out_zeros(cbcr)        # B x 2 x H/16 x W/16 x 8 x 8
+        y = self.q_y.low_pass(y)              # B x 1 x H/8 x W/8 x 8 x 8
+        cbcr = self.q_c.low_pass(cbcr)        # B x 2 x H/16 x W/16 x 8 x 8
 
         # apply idct
         y = idct2d(y)                               # B x 1 x H/8 x W/8 x 8 x 8
