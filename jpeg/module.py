@@ -1,4 +1,4 @@
-from typing import Tuple, Optional, Dict
+from typing import Tuple, Optional, Dict, Any, Literal
 
 import torch
 from pytorch_lightning import LightningModule
@@ -23,12 +23,16 @@ class ExtendedJPEGModule(LightningModule):
                  loss_dict: Optional[Dict[str, float]] = None,
                  lr: float = 1e-3,
                  weight_decay: float = 1e-6,
-                 optimizer: str = 'adam'):
+                 optimizer: str = 'adam',
+                 lp_kernel_size: int = 11,
+                 lp_sigma: int = 3,
+                 predict_model: Literal['jpeg', 'ejpeg'] = 'ejpeg'):
         super().__init__()
         downsample = downsample or ConvDownsample(64)
         upsample = upsample or ConvUpsample(64)
-        self.ejpeg = ExtendedJPEG(downsample=downsample, upsample=upsample, quality=quality)
-        self.jpeg = ExtendedJPEG(quality=quality)
+        self.ejpeg = ExtendedJPEG(downsample=downsample, upsample=upsample, quality=quality,
+                                  lp_kernel_size=lp_kernel_size, lp_sigma=lp_sigma)
+        self.jpeg = ExtendedJPEG(quality=quality, lp_kernel_size=lp_kernel_size, lp_sigma=lp_sigma)
         self.metrics = nn.ModuleDict(metrics or {
             'deltaE76': DeltaE76(),
             'deltaE2000': DeltaE2000(),
@@ -44,7 +48,8 @@ class ExtendedJPEGModule(LightningModule):
         self.hparams.update(lr=lr,
                             weight_decay=weight_decay,
                             quality=quality,
-                            optimizer=optimizer)
+                            optimizer=optimizer,
+                            predict_model=predict_model)
 
     # ignore metrics parameters in loading and saving the state dict
     def state_dict(self, *args, **kwargs):
@@ -116,3 +121,17 @@ class ExtendedJPEGModule(LightningModule):
             return torch.optim.SGD(self.ejpeg.parameters(),
                                    lr=self.hparams['lr'],
                                    weight_decay=self.hparams['weight_decay'])
+
+    @torch.no_grad()
+    def predict_step(self, x: torch.Tensor, batch_idx: int,
+                     dataloader_idx: int = 0) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        model = self.ejpeg if self.hparams['predict_model'] == 'ejpeg' else self.jpeg
+        x = x.to(self.device)
+        x = F.pad(F.pad(x, (16, 16, 16, 16), mode='reflect'), (16, 16, 16, 16))
+        y, cbcr = model.get_mapping(x)
+        x_hat = model.decode(y, cbcr, x.shape[-2:])
+        y = y[..., 32:-32, 32:-32]
+        cbcr = cbcr[..., 16:-16, 16:-16]
+        x_hat = x_hat[..., 32:-32, 32:-32]
+        return x_hat, y, cbcr
+

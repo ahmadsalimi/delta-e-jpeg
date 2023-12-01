@@ -13,7 +13,7 @@ from jpeg.q import Quantizer
 class ExtendedJPEG(nn.Module):
 
     def __init__(self, downsample: Optional[nn.Module] = None, upsample: Optional[nn.Module] = None,
-                 quality: int = 50):
+                 quality: int = 50, lp_kernel_size: int = 11, lp_sigma: float = 3):
         super().__init__()
         self.block_size = 8
         # downsample cb and cr by 4:2:0
@@ -21,6 +21,7 @@ class ExtendedJPEG(nn.Module):
         self.upsample = upsample or NaiveUpsample()
         self.q_y = Quantizer('y', quality=quality)
         self.q_c = Quantizer('c', quality=quality)
+        self.lp = K.filters.GaussianBlur2d((lp_kernel_size, lp_kernel_size), (lp_sigma, lp_sigma))
 
     def __zero_pad(self, image: torch.Tensor) -> torch.Tensor:
         """Pad a batch of images to be a multiple of the block size.
@@ -86,8 +87,8 @@ class ExtendedJPEG(nn.Module):
         y, cbcr = self.downsample(ycbcr)            # B x 1 x H x W, B x 2 x H/2 x W/2
 
         # apply a low-pass filter
-        y = K.filters.gaussian_blur2d(y, (11, 11), (3, 3))  # B x 1 x H x W
-        cbcr = K.filters.gaussian_blur2d(cbcr, (11, 11), (3, 3))  # B x 2 x H/2 x W/2
+        y = self.lp(y)                              # B x 1 x H x W
+        cbcr = self.lp(cbcr)                        # B x 2 x H/2 x W/2
 
         # upsample cb and cr
         y = self.upsample(y, cbcr)                  # B x 3 x H x W
@@ -99,6 +100,23 @@ class ExtendedJPEG(nn.Module):
         rgb = torch.clamp(rgb, 0, 1)      # B x 3 x H x W
 
         return rgb
+
+    def get_mapping(self, rgb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Encode a batch of images in RGB space into JPEG format.
+
+        Args:
+            rgb (torch.Tensor): A batch of images to encode with shape :math:`(B, 3, H, W)`.
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor]: The encoded luminance and chrominance blocks.
+                The luminance channel has shape :math:`(B, 1,
+        """
+        ycbcr = K.color.rgb_to_ycbcr(rgb) - 0.5     # B x 3 x H x W
+
+        # downsample cb and cr
+        y, cbcr = self.downsample(ycbcr)            # B x 1 x H x W, B x 2 x H/2 x W/2
+
+        return y, cbcr
 
     def encode(self, rgb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Encode a batch of images in RGB space into JPEG format.
