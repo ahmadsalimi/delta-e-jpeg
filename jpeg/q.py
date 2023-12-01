@@ -152,7 +152,7 @@ class Quantizer:
         quantized = self.q(x)
         mask = quantized == 0
         mask = mask & (torch.randn_like(mask) > 0)
-        return x.masked_fill(mask, 0)
+        return x * (~mask).to(x.dtype)
 
     def iq(self, x: torch.Tensor) -> torch.Tensor:
         """Inverse quantize a channel.
