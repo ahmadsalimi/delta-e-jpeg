@@ -140,18 +140,6 @@ class Quantizer:
         """
         return q(x, self.Q, self.quality)
 
-    def low_pass(self, x: torch.Tensor) -> torch.Tensor:
-        """Low pass filter a channel.
-
-        Args:
-            x (torch.Tensor): The DCT matrix to low pass filter with shape :math:`(*, M, N)`.
-
-        Returns:
-            torch.Tensor: The low pass filtered channel with shape :math:`(*, M, N)`.
-        """
-        f = 1 - (self.Q - self.Q.min()) / (self.Q.max() - self.Q.min())
-        return x * f
-
     def iq(self, x: torch.Tensor) -> torch.Tensor:
         """Inverse quantize a channel.
 

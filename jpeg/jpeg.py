@@ -85,25 +85,9 @@ class ExtendedJPEG(nn.Module):
         # downsample cb and cr
         y, cbcr = self.downsample(ycbcr)            # B x 1 x H x W, B x 2 x H/2 x W/2
 
-        # split into blocks
-        y = self.__split_blocks(y)                  # B x 1 x H/8 x W/8 x 8 x 8
-        cbcr = self.__split_blocks(cbcr)            # B x 2 x H/16 x W/16 x 8 x 8
-
-        # apply dct
-        y = dct2d(y)                                # B x 1 x H/8 x W/8 x 8 x 8
-        cbcr = dct2d(cbcr)                          # B x 2 x H/16 x W/16 x 8 x 8
-
-        # mimic quantization
-        y = self.q_y.low_pass(y)              # B x 1 x H/8 x W/8 x 8 x 8
-        cbcr = self.q_c.low_pass(cbcr)        # B x 2 x H/16 x W/16 x 8 x 8
-
-        # apply idct
-        y = idct2d(y)                               # B x 1 x H/8 x W/8 x 8 x 8
-        cbcr = idct2d(cbcr)                         # B x 2 x H/16 x W/16 x 8 x 8
-
-        # merge blocks
-        y = self.__merge_blocks(y, (H, W))   # B x 1 x H x W
-        cbcr = self.__merge_blocks(cbcr, (H // 2, W // 2))  # B x 2 x H/2 x W/2
+        # apply a low-pass filter
+        y = K.filters.gaussian_blur2d(y, (7, 7), (2, 2))  # B x 1 x H x W
+        cbcr = K.filters.gaussian_blur2d(cbcr, (7, 7), (2, 2))  # B x 2 x H/2 x W/2
 
         # upsample cb and cr
         y = self.upsample(y, cbcr)                  # B x 3 x H x W
