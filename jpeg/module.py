@@ -95,7 +95,8 @@ class ExtendedJPEGModule(LightningModule):
         loss = sum(self.metrics[name](x=x, x_hat=x_hat) * weight
                    for name, weight in self.loss_dict.items())
         self.log('train_loss', loss)
-        self.__step(x, 'train')
+        with torch.no_grad():
+            self.__step(x, 'train')
         return loss
 
     @torch.no_grad()
