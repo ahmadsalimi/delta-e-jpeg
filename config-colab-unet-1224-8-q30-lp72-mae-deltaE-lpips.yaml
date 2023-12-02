@@ -1,0 +1,62 @@
+seed_everything: 37
+trainer:
+
+  check_val_every_n_epoch: 1
+
+  max_epochs: 100
+
+  default_root_dir: ./drive/MyDrive/DeltaEJPEG/ff-unet-1224-8-q30-lp72-mae-deltaE-lpips
+
+  accelerator: gpu
+  devices: 1
+
+  log_every_n_steps: 1
+
+#  detect_anomaly: True
+
+  callbacks:
+    - class_path: pytorch_lightning.callbacks.ModelCheckpoint
+      init_args:
+        monitor: lpips_alex
+        mode: min
+        save_top_k: 1
+        save_last: True
+        filename: '{epoch:02d}-{val_mae:.3f}-{val_deltaE76:.2f}-{val_deltaE2000:.2f}-{lpips_alex:.3f}'
+
+    - class_path: pytorch_lightning.callbacks.RichProgressBar
+
+    - class_path: callback.save_output.SaveOutput
+      init_args:
+        directory: output
+
+data:
+  data_dir: ./dataset
+  batch_size: 16
+  resize_to: 256
+
+model:
+  downsample:
+#    class_path: jpeg.ds.naive.NaiveDownsample
+    class_path: jpeg.ds.unet.UNetNaiveDownsample
+    init_args:
+      n_channels: 8
+      n_groups: 2
+      ch_mults: [1, 2, 2, 4]
+      n_blocks: 1
+  upsample:
+#    class_path: jpeg.ds.naive.NaiveUpsample
+    class_path: jpeg.ds.unet.UNetNaiveUpsample
+    init_args:
+      n_channels: 8
+      n_groups: 2
+      ch_mults: [1, 2, 2, 4]
+      n_blocks: 1
+  quality: 30
+  lr: 1e-3
+  weight_decay: 1e-3
+  lp_kernel_size: 7
+  lp_sigma: 2
+  loss_dict:
+    mae: 1
+    deltaE76: 0.05
+    lpips_alex: 0.2
