@@ -53,3 +53,6 @@ class DataModule(LightningDataModule):
                           shuffle=False,
                           batch_size=self.batch_size,
                           num_workers=self.num_workers)
+
+    def predict_dataloader(self) -> DataLoader:
+        return self.test_dataloader()

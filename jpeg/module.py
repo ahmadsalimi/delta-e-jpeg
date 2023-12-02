@@ -134,4 +134,3 @@ class ExtendedJPEGModule(LightningModule):
         cbcr = cbcr[..., 16:-16, 16:-16]
         x_hat = x_hat[..., 32:-32, 32:-32]
         return x_hat, y, cbcr
-

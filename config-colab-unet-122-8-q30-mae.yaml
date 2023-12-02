@@ -25,6 +25,10 @@ trainer:
 
     - class_path: pytorch_lightning.callbacks.RichProgressBar
 
+    - class_path: callback.save_output.SaveOutput
+      init_args:
+        directory: output
+
 data:
   data_dir: ./dataset
   batch_size: 16

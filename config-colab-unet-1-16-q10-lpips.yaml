@@ -17,35 +17,38 @@ trainer:
   callbacks:
     - class_path: pytorch_lightning.callbacks.ModelCheckpoint
       init_args:
-        monitor: val_lpips_alex
+        monitor: val_mae
         mode: min
         save_top_k: 1
         save_last: True
-        filename: '{epoch:02d}-{val_lpips_alex:.2f}'
+        filename: '{epoch:02d}-{val_mae:.2f}'
 
     - class_path: pytorch_lightning.callbacks.RichProgressBar
 
 data:
   data_dir: ./dataset
-  batch_size: 4
+  batch_size: 16
+  resize_to: 256
 
 model:
   downsample:
-    class_path: jpeg.ds.naive.NaiveDownsample
-#    class_path: jpeg.ds.conv.ConvDownsample
-#    init_args:
-#      channels: 64
-#      init: False
-#      clamp: False
+#    class_path: jpeg.ds.naive.NaiveDownsample
+    class_path: jpeg.ds.unet.UNetNaiveDownsample
+    init_args:
+      n_channels: 8
+      n_groups: 2
+      ch_mults: [1, 2, 2, 4]
+      n_blocks: 1
   upsample:
 #    class_path: jpeg.ds.naive.NaiveUpsample
-    class_path: jpeg.ds.unet.UNetUpsample
+    class_path: jpeg.ds.unet.UNetNaiveUpsample
     init_args:
-      n_channels: 16
-      n_groups: 8
-      ch_mults: [1]
-  quality: 10
+      n_channels: 8
+      n_groups: 2
+      ch_mults: [1, 2, 2, 4]
+      n_blocks: 1
+  quality: 30
   lr: 1e-3
   weight_decay: 1e-3
   loss_dict:
-    lpips_alex: 1
+    mae: 1
