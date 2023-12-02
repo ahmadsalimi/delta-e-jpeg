@@ -38,7 +38,8 @@ class SaveOutput(pl.callbacks.BasePredictionWriter):
         x_hat, y, cbcr = outputs
         dataloader = trainer.predict_dataloaders[dataloader_idx]
         dataset: ImageFolder = dataloader.dataset
-        batch_files = dataset.files[batch_idx * dataloader.batch_size:batch_idx * dataloader.batch_size + len(x_hat)]
+        batch_start = batch_idx * trainer.datamodule.batch_size
+        batch_files = dataset.files[batch_start:batch_start + len(x_hat)]
         self.filenames += list(map(os.path.basename, batch_files))
         self.x = torch.cat((self.x, batch), dim=0)
         self.x_hat = torch.cat((self.x_hat, x_hat), dim=0)
