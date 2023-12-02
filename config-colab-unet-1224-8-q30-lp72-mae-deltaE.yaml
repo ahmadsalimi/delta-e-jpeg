@@ -5,7 +5,7 @@ trainer:
 
   max_epochs: 100
 
-  default_root_dir: ./drive/MyDrive/DeltaEJPEG/ff-unet-1224-8-q30-lp72-mae
+  default_root_dir: ./drive/MyDrive/DeltaEJPEG/ff-unet-1224-8-q30-lp72-mae-deltaE
 
   accelerator: gpu
   devices: 1
