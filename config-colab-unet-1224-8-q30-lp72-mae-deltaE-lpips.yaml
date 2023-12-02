@@ -17,11 +17,11 @@ trainer:
   callbacks:
     - class_path: pytorch_lightning.callbacks.ModelCheckpoint
       init_args:
-        monitor: lpips_alex
+        monitor: val_lpips_alex
         mode: min
         save_top_k: 1
         save_last: True
-        filename: '{epoch:02d}-{val_mae:.3f}-{val_deltaE76:.2f}-{val_deltaE2000:.2f}-{lpips_alex:.3f}'
+        filename: '{epoch:02d}-{val_mae:.3f}-{val_deltaE76:.2f}-{val_deltaE2000:.2f}-{val_lpips_alex:.3f}'
 
     - class_path: pytorch_lightning.callbacks.RichProgressBar
 
