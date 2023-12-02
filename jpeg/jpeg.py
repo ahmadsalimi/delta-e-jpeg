@@ -101,22 +101,29 @@ class ExtendedJPEG(nn.Module):
 
         return rgb
 
-    def get_mapping(self, rgb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Encode a batch of images in RGB space into JPEG format.
+    def get_representation(self, rgb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Represent a batch of images in RGB space into learned format.
 
         Args:
             rgb (torch.Tensor): A batch of images to encode with shape :math:`(B, 3, H, W)`.
 
         Returns:
-            Tuple[torch.Tensor, torch.Tensor]: The encoded luminance and chrominance blocks.
-                The luminance channel has shape :math:`(B, 1,
+            Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: The representation of each channel.
         """
         ycbcr = K.color.rgb_to_ycbcr(rgb) - 0.5     # B x 3 x H x W
 
         # downsample cb and cr
         y, cbcr = self.downsample(ycbcr)            # B x 1 x H x W, B x 2 x H/2 x W/2
 
-        return y, cbcr
+        y_only = self.upsample(y, torch.zeros_like(cbcr))
+        cb_only = self.upsample(torch.zeros_like(y), torch.cat([cbcr[:, :1], torch.zeros_like(cbcr[:, 1:])], dim=1))
+        cr_only = self.upsample(torch.zeros_like(y), torch.cat([torch.zeros_like(cbcr[:, :1]), cbcr[:, 1:]], dim=1))
+
+        y_only = K.color.ycbcr_to_rgb(y_only + 0.5).clamp(0, 1)
+        cb_only = K.color.ycbcr_to_rgb(cb_only + 0.5).clamp(0, 1)
+        cr_only = K.color.ycbcr_to_rgb(cr_only + 0.5).clamp(0, 1)
+
+        return y_only, cb_only, cr_only
 
     def encode(self, rgb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Encode a batch of images in RGB space into JPEG format.

@@ -17,25 +17,27 @@ class SaveOutput(pl.callbacks.BasePredictionWriter):
         self.x = None
         self.x_hat = None
         self.y = None
-        self.cbcr = None
+        self.cb = None
+        self.cr = None
 
     def on_predict_epoch_start(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
         self.filenames = []
         self.x = torch.tensor([], device=pl_module.device)
         self.x_hat = torch.tensor([], device=pl_module.device)
         self.y = torch.tensor([], device=pl_module.device)
-        self.cbcr = torch.tensor([], device=pl_module.device)
+        self.cb = torch.tensor([], device=pl_module.device)
+        self.cr = torch.tensor([], device=pl_module.device)
 
     def on_predict_batch_end(
         self,
         trainer: pl.Trainer,
         pl_module: pl.LightningModule,
-        outputs: Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+        outputs: Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
         batch: torch.Tensor,
         batch_idx: int,
         dataloader_idx: int,
     ) -> None:
-        x_hat, y, cbcr = outputs
+        x_hat, y, cb, cr = outputs
         dataloader = trainer.predict_dataloaders[dataloader_idx]
         dataset: ImageFolder = dataloader.dataset
         batch_start = batch_idx * trainer.datamodule.batch_size
@@ -44,18 +46,19 @@ class SaveOutput(pl.callbacks.BasePredictionWriter):
         self.x = torch.cat((self.x, batch), dim=0)
         self.x_hat = torch.cat((self.x_hat, x_hat), dim=0)
         self.y = torch.cat((self.y, y), dim=0)
-        self.cbcr = torch.cat((self.cbcr, cbcr), dim=0)
+        self.cb = torch.cat((self.cb, cb), dim=0)
+        self.cr = torch.cat((self.cr, cr), dim=0)
 
     def on_predict_epoch_end(
         self, trainer: "pl.Trainer", pl_module: "pl.LightningModule", outputs: Sequence[Any]
     ) -> None:
         directory = os.path.join(trainer.default_root_dir, self.directory)
         os.makedirs(directory, exist_ok=True)
-        assert len(self.filenames) == len(self.x) == len(self.x_hat) == len(self.y) == len(self.cbcr)
-        for filename, x, x_hat, y, cbcr in zip(self.filenames, self.x, self.x_hat, self.y, self.cbcr):
+        assert len(self.filenames) == len(self.x) == len(self.x_hat) == len(self.y) == len(self.cb)
+        for filename, x, x_hat, y, cb, cr in zip(self.filenames, self.x, self.x_hat, self.y, self.cb, self.cr):
             prefix, ext = os.path.splitext(filename)
             plt.imsave(os.path.join(directory, f'{prefix}{ext}'), x.permute(1, 2, 0).cpu().numpy())
             plt.imsave(os.path.join(directory, f'{prefix}_hat{ext}'), x_hat.permute(1, 2, 0).cpu().numpy())
-            plt.imsave(os.path.join(directory, f'{prefix}_y{ext}'), y.squeeze(0).cpu().numpy(), cmap='gray')
-            plt.imsave(os.path.join(directory, f'{prefix}_cbcr0{ext}'), cbcr[0].cpu().numpy(), cmap='gray')
-            plt.imsave(os.path.join(directory, f'{prefix}_cbcr1{ext}'), cbcr[1].cpu().numpy(), cmap='gray')
+            plt.imsave(os.path.join(directory, f'{prefix}_y{ext}'), y.permute(1, 2, 0).cpu().numpy())
+            plt.imsave(os.path.join(directory, f'{prefix}_cbcr0{ext}'), cb.permute(1, 2, 0).cpu().numpy())
+            plt.imsave(os.path.join(directory, f'{prefix}_cbcr1{ext}'), cr.permute(1, 2, 0).cpu().numpy())

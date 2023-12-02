@@ -124,13 +124,14 @@ class ExtendedJPEGModule(LightningModule):
 
     @torch.no_grad()
     def predict_step(self, x: torch.Tensor, batch_idx: int,
-                     dataloader_idx: int = 0) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+                     dataloader_idx: int = 0) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         model = self.ejpeg if self.hparams['predict_model'] == 'ejpeg' else self.jpeg
         x = x.to(self.device)
         x = F.pad(F.pad(x, (16, 16, 16, 16), mode='reflect'), (16, 16, 16, 16))
-        y, cbcr = model.get_mapping(x)
+        y, cb, cr = model.get_representation(x)
         x_hat = model.decode(*model.encode(x), x.shape[-2:])
         y = y[..., 32:-32, 32:-32]
-        cbcr = cbcr[..., 16:-16, 16:-16]
+        cb = cb[..., 32:-32, 32:-32]
+        cr = cr[..., 32:-32, 32:-32]
         x_hat = x_hat[..., 32:-32, 32:-32]
-        return x_hat, y, cbcr
+        return x_hat, y, cb, cr
