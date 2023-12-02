@@ -129,7 +129,7 @@ class ExtendedJPEGModule(LightningModule):
         x = x.to(self.device)
         x = F.pad(F.pad(x, (16, 16, 16, 16), mode='reflect'), (16, 16, 16, 16))
         y, cbcr = model.get_mapping(x)
-        x_hat = model.decode(y, cbcr, x.shape[-2:])
+        x_hat = model.decode(*model.encode(x), x.shape[-2:])
         y = y[..., 32:-32, 32:-32]
         cbcr = cbcr[..., 16:-16, 16:-16]
         x_hat = x_hat[..., 32:-32, 32:-32]
